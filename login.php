@@ -55,15 +55,18 @@ include __DIR__ . '/includes/header.php';
                     <label for="email">Email Address</label>
                     <div class="input-wrap">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                        <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
                     </div>
+                </div>
+                <div class="auth-form-options">
+                    <a href="<?= SITE_URL ?>/forgot-password.php" class="auth-forgot-link">Forgot password?</a>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Sign In</button>
             </form>

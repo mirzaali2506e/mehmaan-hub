@@ -9,6 +9,7 @@ A rental property listing platform built with HTML, CSS, JavaScript, PHP, and My
 2. Click "Import"
 3. Choose the file `database/mehmaan_hub.sql`
 4. Click "Go" to import
+5. Also import `database/add_password_resets.sql` to enable the forgot password (OTP) feature
 
 The database comes pre-loaded with:
 - 3 property owners with properties
@@ -57,3 +58,6 @@ http://localhost/mhman-hb/php-project/
 - User authentication (login/register)
 - Role-based access (tenant, owner, admin)
 - Contact form
+- Forgot password with OTP verification (email or phone)
+
+> Note: The forgot password flow generates an OTP and shows it in the success message (demo mode). To send real OTPs via email/SMS, integrate a provider (e.g. PHPMailer or Twilio) in `forgot-password.php`.

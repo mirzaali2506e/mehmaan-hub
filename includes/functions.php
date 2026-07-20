@@ -211,3 +211,55 @@ function get_property_type_label($type) {
 function format_price($price) {
     return 'Rs ' . number_format($price, 0);
 }
+
+function find_user_by_email_or_phone($identifier) {
+    $identifier = trim($identifier);
+    if (!$identifier) {
+        return null;
+    }
+    $stmt = db()->prepare('SELECT id, name, email, phone FROM users WHERE email = ? OR phone = ? LIMIT 1');
+    $stmt->bind_param('ss', $identifier, $identifier);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc();
+}
+
+function generate_otp() {
+    return str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+}
+
+function create_password_reset($userId) {
+    $otp = generate_otp();
+    $otpHash = password_hash($otp, PASSWORD_DEFAULT);
+    $expiresAt = date('Y-m-d H:i:s', time() + 600);
+
+    db()->query("DELETE FROM password_resets WHERE user_id = " . (int)$userId);
+
+    $stmt = db()->prepare('INSERT INTO password_resets (user_id, otp_hash, expires_at) VALUES (?, ?, ?)');
+    $stmt->bind_param('iss', $userId, $otpHash, $expiresAt);
+    $stmt->execute();
+
+    return $otp;
+}
+
+function verify_password_reset_otp($userId, $otp) {
+    $stmt = db()->prepare('SELECT id, otp_hash, expires_at, used FROM password_resets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    if (!$row || $row['used']) {
+        return false;
+    }
+    if (strtotime($row['expires_at']) < time()) {
+        return false;
+    }
+    if (!password_verify($otp, $row['otp_hash'])) {
+        return false;
+    }
+
+    $upd = db()->prepare('UPDATE password_resets SET used = 1 WHERE id = ?');
+    $upd->bind_param('i', $row['id']);
+    $upd->execute();
+
+    return true;
+}

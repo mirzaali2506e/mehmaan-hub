@@ -67,21 +67,21 @@ include __DIR__ . '/includes/header.php';
                     <label for="name">Full Name</label>
                     <div class="input-wrap">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="name" name="name" placeholder="Your full name" required>
+                        <input type="text" id="name" name="name" placeholder="Your full name" autocomplete="name" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <div class="input-wrap">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
                     <div class="input-wrap">
                         <i class="fas fa-phone"></i>
-                        <input type="tel" id="phone" name="phone" placeholder="03XX-XXXXXXX">
+                        <input type="tel" id="phone" name="phone" placeholder="03XX-XXXXXXX" autocomplete="tel">
                     </div>
                 </div>
                 <div class="form-group">
@@ -109,14 +109,14 @@ include __DIR__ . '/includes/header.php';
                     <label for="password">Password</label>
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" placeholder="Min 6 characters" required>
+                        <input type="password" id="password" name="password" placeholder="Min 6 characters" autocomplete="new-password" required>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="confirm_password">Confirm Password</label>
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password" autocomplete="new-password" required>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Create Account</button>

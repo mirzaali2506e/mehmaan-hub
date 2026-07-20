@@ -1122,6 +1122,80 @@ textarea:focus-visible {
     margin: 0;
 }
 
+.auth-form-options {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -8px;
+}
+
+.auth-forgot-link {
+    font-size: .85rem;
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.auth-forgot-link:hover {
+    text-decoration: underline;
+    color: var(--primary-dark);
+}
+
+.auth-otp-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--primary-50);
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-sm);
+    font-size: .85rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+    margin-bottom: var(--sp-2);
+}
+
+.auth-otp-notice i {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-top: 2px;
+}
+
+.auth-otp-display {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: var(--primary);
+    padding: 10px;
+    background: var(--primary-50);
+    border-radius: var(--radius-sm);
+    margin: var(--sp-3) 0;
+}
+
+.otp-input {
+    text-align: center !important;
+    letter-spacing: 6px;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    padding-left: 44px !important;
+}
+
+.auth-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .85rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: var(--sp-4);
+    transition: var(--transition);
+}
+
+.auth-back-link:hover {
+    color: var(--primary);
+}
+
 .auth-demo {
     margin-top: var(--sp-5);
     padding: var(--sp-4);
@@ -1176,8 +1250,12 @@ textarea:focus-visible {
 .input-wrap i {
     position: absolute;
     left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--text-tertiary);
     font-size: .92rem;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .input-wrap input {
@@ -1193,10 +1271,24 @@ textarea:focus-visible {
     transition: var(--transition);
 }
 
+.input-wrap input::placeholder {
+    color: var(--text-tertiary);
+    opacity: 1;
+}
+
 .input-wrap input:focus {
     border-color: var(--primary);
     background: var(--surface);
     box-shadow: var(--shadow-focus);
+}
+
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text);
+    -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+    caret-color: var(--text);
+    transition: background-color 9999s ease-in-out 0s;
 }
 
 .form-group input,
