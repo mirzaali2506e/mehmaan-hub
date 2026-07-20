@@ -80,6 +80,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="new_password" name="new_password" placeholder="Min 6 characters" autocomplete="new-password" required>
+                        <button type="button" class="pwd-toggle" data-target="new_password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -87,6 +88,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter new password" autocomplete="new-password" required>
+                        <button type="button" class="pwd-toggle" data-target="confirm_password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Reset Password</button>

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/mail.php';
 
 if (current_user()) {
     redirect('/index.php');
@@ -9,6 +10,7 @@ $step = 'request';
 $identifier = '';
 $maskedContact = '';
 $userId = null;
+$mailSent = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'send';
@@ -38,12 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $step = 'sent';
             $userId = $user['id'];
 
-            if (strpos($identifier, '@') !== false) {
+            if (strpos($identifier, '@') !== false || filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
                 $demoChannel = 'email ' . $maskedEmail;
+                $mailSent = send_otp_email($user['email'], $user['name'], $otp);
+                if ($mailSent) {
+                    flash('success', 'OTP sent to your email ' . $maskedEmail . '. Check your inbox (and spam folder).');
+                } else {
+                    flash('error', 'Could not send OTP email. SMTP not configured. (Demo OTP: ' . $otp . ')');
+                }
             } else {
                 $demoChannel = 'phone ' . $maskedPhone;
+                flash('success', 'OTP sent to your phone ' . $maskedPhone . '. (SMS not configured. Demo OTP: ' . $otp . ')');
             }
-            flash('success', 'OTP sent to your ' . $demoChannel . '. (Demo OTP: ' . $otp . ')');
         }
     } elseif ($action === 'resend') {
         $userId = $_SESSION['reset_user_id'] ?? null;
@@ -64,7 +72,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ? str_repeat('*', strlen($phone) - 4) . substr($phone, -4)
             : $phone;
         $maskedContact = trim($maskedEmail . ' / ' . $maskedPhone, ' /');
-        flash('success', 'New OTP sent. (Demo OTP: ' . $otp . ')');
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $mailSent = send_otp_email($user['email'], $user['name'], $otp);
+            if ($mailSent) {
+                flash('success', 'New OTP sent to your email ' . $maskedEmail . '.');
+            } else {
+                flash('error', 'Could not send OTP email. SMTP not configured. (Demo OTP: ' . $otp . ')');
+            }
+        } else {
+            flash('success', 'New OTP sent. (SMS not configured. Demo OTP: ' . $otp . ')');
+        }
     }
 }
 
