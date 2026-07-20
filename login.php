@@ -63,7 +63,6 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                        <button type="button" class="pwd-toggle" data-target="password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="auth-form-options">

@@ -110,7 +110,6 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="password" name="password" placeholder="Min 6 characters" autocomplete="new-password" required>
-                        <button type="button" class="pwd-toggle" data-target="password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -118,7 +117,6 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter password" autocomplete="new-password" required>
-                        <button type="button" class="pwd-toggle" data-target="confirm_password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Create Account</button>

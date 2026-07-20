@@ -111,27 +111,6 @@ function toggleWishlist(e, propertyId) {
     });
 }
 
-// Password show/hide toggle
-(function() {
-    document.querySelectorAll('.pwd-toggle').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const targetId = this.getAttribute('data-target');
-            const input = document.getElementById(targetId);
-            if (!input) return;
-            const icon = this.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('fa-eye', 'fa-eye-slash');
-                this.setAttribute('aria-label', 'Hide password');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('fa-eye-slash', 'fa-eye');
-                this.setAttribute('aria-label', 'Show password');
-            }
-        });
-    });
-})();
-
 // Gallery image change
 function changeMainImage(thumb, src) {
     document.getElementById('mainGalleryImg').src = src;

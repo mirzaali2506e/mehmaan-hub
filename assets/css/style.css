@@ -1291,32 +1291,6 @@ textarea:focus-visible {
     transition: background-color 9999s ease-in-out 0s;
 }
 
-.input-wrap .pwd-toggle {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    color: var(--text-tertiary);
-    font-size: .92rem;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    transition: var(--transition);
-}
-
-.input-wrap .pwd-toggle:hover {
-    color: var(--primary);
-}
-
-.input-wrap:has(.pwd-toggle) input {
-    padding-right: 44px;
-}
-
 .form-group input,
 .form-group select,
 .form-group textarea {

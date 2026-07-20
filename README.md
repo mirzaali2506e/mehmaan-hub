@@ -60,8 +60,4 @@ http://localhost/mhman-hb/php-project/
 - Contact form
 - Forgot password with OTP verification (email or phone)
 
-> Note: The forgot password flow sends OTP via email using PHPMailer. To enable real email delivery:
-> 1. Run `composer install` in the project root to install PHPMailer
-> 2. Edit `includes/config.php` and fill in the SMTP constants (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_ADDRESS)
-> 3. For Gmail, use an App Password (not your account password) and set MAIL_HOST=smtp.gmail.com, MAIL_PORT=587
-> If SMTP is not configured, the OTP is shown in the error message as a fallback for testing.
+> Note: The forgot password flow generates an OTP and shows it in the success message (demo mode). To send real OTPs via email/SMS, integrate a provider (e.g. PHPMailer or Twilio) in `forgot-password.php`.
