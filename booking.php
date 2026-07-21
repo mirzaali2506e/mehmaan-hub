@@ -1,7 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
-$user = require_login();
+$user = current_user();
+if (!$user) {
+    flash('error', 'Please log in to book a property.');
+    redirect('/login.php');
+}
 
 $propertyId = (int)($_GET['property_id'] ?? 0);
 $property = get_property_by_id($propertyId);
@@ -17,7 +20,6 @@ if ($property['owner_id'] == $user['id']) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $startDate = $_POST['start_date'] ?? '';
     $endDate = $_POST['end_date'] ?? '';
     $bookingMode = $_POST['booking_mode'] ?? 'month';
@@ -52,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('iissds', $propertyId, $user['id'], $startDate, $endDate, $totalAmount, $notes);
 
         if ($stmt->execute()) {
-            log_activity($user['id'], 'create_booking', 'property', $propertyId);
             flash('success', 'Booking request sent! The owner will confirm shortly.');
             redirect('/dashboard.php');
         } else {
@@ -98,8 +99,6 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form method="POST" class="booking-form">
-                <?= csrf_field() ?>
-
                 <?php if ($period === 'both'): ?>
                 <div class="form-group">
                     <label for="booking_mode">Booking Type <span class="required">*</span></label>
