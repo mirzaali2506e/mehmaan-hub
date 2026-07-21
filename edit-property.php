@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
 $user = require_role('owner');
 
 $id = (int)($_GET['id'] ?? 0);
@@ -14,7 +13,6 @@ if (!$property || ($property['owner_id'] != $user['id'] && $user['role'] !== 'ad
 $images = get_property_images($id);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $propertyType = $_POST['property_type'] ?? 'apartment';
@@ -43,18 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute()) {
             if (!empty($_FILES['images']['name'][0])) {
-                if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
+                if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0777, true);
                 $startIdx = count($images);
                 foreach ($_FILES['images']['tmp_name'] as $idx => $tmpName) {
                     if ($_FILES['images']['error'][$idx] === UPLOAD_ERR_OK) {
-                        $file = [
-                            'name' => $_FILES['images']['name'][$idx],
-                            'tmp_name' => $tmpName,
-                            'size' => $_FILES['images']['size'][$idx],
-                            'error' => $_FILES['images']['error'][$idx]
-                        ];
-                        $filename = validate_and_upload_image($file, UPLOAD_DIR, 'property_' . $id . '_');
-                        if ($filename) {
+                        $ext = pathinfo($_FILES['images']['name'][$idx], PATHINFO_EXTENSION);
+                        $filename = 'property_' . $id . '_' . ($startIdx + $idx) . '.' . $ext;
+                        if (move_uploaded_file($tmpName, UPLOAD_DIR . $filename)) {
                             $imgStmt = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary, sort_order) VALUES (?, ?, 0, ?)');
                             $order = $startIdx + $idx;
                             $imgStmt->bind_param('isi', $id, $filename, $order);
@@ -84,7 +77,6 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form action="<?= SITE_URL ?>/edit-property.php?id=<?= $id ?>" method="POST" enctype="multipart/form-data" class="property-form">
-                <?= csrf_field() ?>
                 <div class="form-section">
                     <h3>Basic Information</h3>
                     <div class="form-grid">
@@ -204,12 +196,7 @@ include __DIR__ . '/includes/header.php';
                             <?php foreach ($images as $img): ?>
                                 <div class="current-image">
                                     <img src="<?= e(image_url($img['image_path'])) ?>" alt="">
-                                    <form method="POST" action="<?= SITE_URL ?>/api/delete-image.php" style="display:inline;" onsubmit="return confirm('Delete this image?')">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="id" value="<?= $img['id'] ?>">
-                                        <input type="hidden" name="property_id" value="<?= $id ?>">
-                                        <button type="submit" class="remove-image" title="Delete image"><i class="fas fa-times"></i></button>
-                                    </form>
+                                    <a href="<?= SITE_URL ?>/api/delete-image.php?id=<?= $img['id'] ?>&property_id=<?= $id ?>" class="remove-image" onclick="return confirm('Delete this image?')"><i class="fas fa-times"></i></a>
                                 </div>
                             <?php endforeach; ?>
                         </div>

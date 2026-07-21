@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
 $user = require_role('owner');
 
 $myProperties = get_user_properties($user['id']);
@@ -115,11 +114,7 @@ include __DIR__ . '/includes/header.php';
                                 <td>
                                     <a href="<?= SITE_URL ?>/property-details.php?id=<?= $p['id'] ?>" class="btn-icon" title="View"><i class="fas fa-eye"></i></a>
                                     <a href="<?= SITE_URL ?>/edit-property.php?id=<?= $p['id'] ?>" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></a>
-                                    <form method="POST" action="<?= SITE_URL ?>/api/delete-property.php" style="display:inline;" onsubmit="return confirm('Delete this property?')">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="id" value="<?= $p['id'] ?>">
-                                        <button type="submit" class="btn-icon btn-danger" title="Delete"><i class="fas fa-trash"></i></button>
-                                    </form>
+                                    <a href="<?= SITE_URL ?>/api/delete-property.php?id=<?= $p['id'] ?>" class="btn-icon btn-danger" title="Delete" onclick="return confirm('Delete this property?')"><i class="fas fa-trash"></i></a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -171,18 +166,8 @@ include __DIR__ . '/includes/header.php';
                                 <td><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
                                 <td>
                                     <?php if ($b['status'] === 'pending'): ?>
-                                        <form method="POST" action="<?= SITE_URL ?>/api/booking-action.php" style="display:inline;">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= $b['id'] ?>">
-                                            <input type="hidden" name="action" value="confirm">
-                                            <button type="submit" class="btn btn-success btn-sm">Confirm</button>
-                                        </form>
-                                        <form method="POST" action="<?= SITE_URL ?>/api/booking-action.php" style="display:inline;">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= $b['id'] ?>">
-                                            <input type="hidden" name="action" value="cancel">
-                                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
-                                        </form>
+                                        <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=confirm" class="btn btn-success btn-sm">Confirm</a>
+                                        <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=cancel" class="btn btn-danger btn-sm">Cancel</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>

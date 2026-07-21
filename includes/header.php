@@ -1,6 +1,4 @@
 <?php
-require_once __DIR__ . '/security.php';
-security_headers();
 start_session_safe();
 $user = current_user();
 $currentPage = basename($_SERVER['PHP_SELF'], '.php');
@@ -13,7 +11,6 @@ $hideNav = in_array($currentPage, $authPages);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?= csrf_token() ?>">
     <title><?= e($pageTitle ?? SITE_NAME) ?><?= isset($pageTitle) ? ' - ' . SITE_NAME : '' ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

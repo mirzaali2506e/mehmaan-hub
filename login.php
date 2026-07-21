@@ -1,23 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
-
-security_headers();
 
 if (current_user()) {
     redirect('/index.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
-
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Rate limiting: 5 attempts per 15 minutes
-    if (!rate_limit('login', 5, 900)) {
-        flash('error', 'Too many login attempts. Please try again in 15 minutes.');
-    } elseif (!$email || !$password) {
+    if (!$email || !$password) {
         flash('error', 'Please fill in all fields.');
     } else {
         $stmt = db()->prepare('SELECT id, name, email, password, role FROM users WHERE email = ?');
@@ -25,24 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result->num_rows === 0) {
-            // Generic message — no user enumeration
-            flash('error', 'Invalid email or password.');
+            flash('error', 'No account found with that email.');
         } else {
             $user = $result->fetch_assoc();
             if (password_verify($password, $user['password'])) {
-                // Prevent session fixation
-                session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_role'] = $user['role'];
-                log_activity($user['id'], 'login');
                 if ($user['role'] === 'owner' || $user['role'] === 'admin') {
                     redirect('/owner-dashboard.php');
                 } else {
                     redirect('/dashboard.php');
                 }
             } else {
-                flash('error', 'Invalid email or password.');
+                flash('error', 'Incorrect password.');
             }
         }
     }
@@ -63,7 +51,6 @@ include __DIR__ . '/includes/header.php';
                 <p>Sign in to your account to continue</p>
             </div>
             <form method="POST" class="auth-form">
-                <?= csrf_field() ?>
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <div class="input-wrap">
@@ -76,7 +63,6 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                        <button type="button" class="pwd-toggle" data-target="password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="auth-form-options">

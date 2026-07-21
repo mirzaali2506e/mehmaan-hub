@@ -1,11 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
-
 $user = require_login();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    csrf_verify();
     $name = trim($_POST['name'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $currentPassword = $_POST['current_password'] ?? '';
@@ -56,7 +53,6 @@ $user = current_user();
             </div>
 
             <form method="POST" class="profile-form">
-                <?= csrf_field() ?>
                 <div class="form-section">
                     <h3>Personal Information</h3>
                     <div class="form-group">

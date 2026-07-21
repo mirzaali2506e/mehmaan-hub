@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/security.php';
 $user = require_role('tenant');
 
 $myBookings = get_user_bookings($user['id']);
@@ -105,12 +104,7 @@ include __DIR__ . '/includes/header.php';
                                 <td><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
                                 <td>
                                     <?php if ($b['status'] === 'pending'): ?>
-                                        <form method="POST" action="<?= SITE_URL ?>/api/booking-action.php" style="display:inline;">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="id" value="<?= $b['id'] ?>">
-                                            <input type="hidden" name="action" value="cancel">
-                                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
-                                        </form>
+                                        <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=cancel" class="btn btn-danger btn-sm">Cancel</a>
                                     <?php endif; ?>
                                 </td>
                             </tr>

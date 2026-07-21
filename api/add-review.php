@@ -1,13 +1,10 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-require_once __DIR__ . '/../includes/security.php';
 $user = require_login();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('/index.php');
 }
-
-csrf_verify();
 
 $propertyId = (int)($_POST['property_id'] ?? 0);
 $rating = (int)($_POST['rating'] ?? 5);
