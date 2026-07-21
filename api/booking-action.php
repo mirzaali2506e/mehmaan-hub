@@ -1,9 +1,18 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/security.php';
+
 $user = require_login();
 
-$id = (int)($_GET['id'] ?? 0);
-$action = $_GET['action'] ?? '';
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    flash('error', 'Invalid request method.');
+    redirect('/dashboard.php');
+}
+
+csrf_verify();
+
+$id = (int)($_POST['id'] ?? 0);
+$action = $_POST['action'] ?? '';
 
 if (!in_array($action, ['confirm', 'cancel', 'complete'])) {
     flash('error', 'Invalid action.');
@@ -55,5 +64,6 @@ if ($action === 'confirm') {
     $stmt->execute();
 }
 
+log_activity($user['id'], 'booking_' . $action, 'booking', $id);
 flash('success', 'Booking ' . $newStatus . ' successfully.');
 redirect($isOwner ? '/owner-dashboard.php' : '/dashboard.php');

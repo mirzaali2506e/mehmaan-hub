@@ -10,6 +10,7 @@ A rental property listing platform built with HTML, CSS, JavaScript, PHP, and My
 3. Choose the file `database/mehmaan_hub.sql`
 4. Click "Go" to import
 5. Also import `database/add_password_resets.sql` to enable the forgot password (OTP) feature
+6. Import `database/add_security_tables.sql` to enable rate limiting and activity logging
 
 The database comes pre-loaded with:
 - 3 property owners with properties
@@ -17,14 +18,37 @@ The database comes pre-loaded with:
 - Multiple images per property (stock photos from Pexels)
 - Sample reviews
 
-### 2. Configure Database (if needed)
-Edit `includes/config.php` if your MySQL credentials differ:
-- DB_HOST: localhost
-- DB_USER: root
-- DB_PASS: (your password, usually empty for XAMPP)
-- DB_NAME: mehmaan_hub
+### 2. Environment Configuration
+1. Copy `.env.example` to `.env` in the project root
+2. Edit `.env` and fill in your values:
+   - Database credentials (DB_HOST, DB_USER, DB_PASS, DB_NAME)
+   - Site URL (SITE_URL)
+   - SMTP settings for password reset emails (MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, etc.)
 
-### 3. Run the Project
+### 3. Install PHP Dependencies
+Run this in the project root (requires Composer installed):
+```
+composer install
+```
+This installs:
+- `phpmailer/phpmailer` — for sending real OTP emails via SMTP
+- `vlucas/phpdotenv` — for loading environment variables from `.env`
+
+If Composer is not available, the project still works — email sending is skipped with a logged error.
+
+### 4. Configure SMTP (for password reset emails)
+Edit `.env` and fill in the SMTP settings:
+```
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=your-email@gmail.com
+```
+For Gmail, use an **App Password** (not your account password). Enable 2FA, then generate an App Password from your Google Account security settings.
+
+### 5. Run the Project
 Place the `php-project` folder in your XAMPP `htdocs` directory and access:
 ```
 http://localhost/mhman-hb/php-project/
@@ -58,6 +82,23 @@ http://localhost/mhman-hb/php-project/
 - User authentication (login/register)
 - Role-based access (tenant, owner, admin)
 - Contact form
-- Forgot password with OTP verification (email or phone)
+- Forgot password with OTP verification via email (PHPMailer + SMTP)
+- CSRF protection on all forms
+- Rate limiting on login, forgot password, and OTP verification
+- Security headers (CSP, X-Frame-Options, etc.)
+- Secure file upload validation (MIME, extension whitelist, size limit)
+- Activity logging for audit trail
 
-> Note: The forgot password flow generates an OTP and shows it in the success message (demo mode). To send real OTPs via email/SMS, integrate a provider (e.g. PHPMailer or Twilio) in `forgot-password.php`.
+## Security
+
+- **CSRF tokens** on every POST form and AJAX request
+- **Rate limiting**: 5 login attempts / 15 min, 3 reset requests / 15 min, 5 OTP attempts / 15 min
+- **Session regeneration** after successful login (prevents session fixation)
+- **Generic login errors** (no user enumeration)
+- **OTP never displayed in UI** — sent only via email
+- **Secure file uploads**: MIME validation, extension whitelist, 5MB limit, random filenames
+- **Security headers**: X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy
+- **Password hashing** with `password_hash()` / bcrypt
+- **OTP hashing** with `password_hash()` — stored as hash, never plaintext
+- **OTP expiry** (10 minutes) and resend cooldown (60 seconds)
+- **Prepared statements** throughout (SQL injection prevention)

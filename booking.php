@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
+
 $user = require_login();
 
 $propertyId = (int)($_GET['property_id'] ?? 0);
@@ -16,6 +18,7 @@ if ($property['owner_id'] == $user['id']) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     $startDate = $_POST['start_date'] ?? '';
     $endDate = $_POST['end_date'] ?? '';
     $bookingMode = $_POST['booking_mode'] ?? 'month';
@@ -113,6 +116,7 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form method="POST" class="booking-form">
+                <?= csrf_field() ?>
                 <?php if ($period === 'both'): ?>
                 <div class="form-group">
                     <label for="booking_mode">Booking Type <span class="required">*</span></label>

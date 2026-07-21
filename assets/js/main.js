@@ -79,10 +79,15 @@
 function toggleWishlist(e, propertyId) {
     e.preventDefault();
     e.stopPropagation();
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
     fetch(SITE_URL + '/api/wishlist.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'property_id=' + propertyId
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': csrfToken
+        },
+        body: 'property_id=' + propertyId + '&csrf_token=' + encodeURIComponent(csrfToken)
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {

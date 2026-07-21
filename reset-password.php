@@ -1,5 +1,8 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
+
+security_headers();
 
 if (current_user()) {
     redirect('/index.php');
@@ -14,31 +17,39 @@ if (!$userId) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $otp = trim($_POST['otp'] ?? '');
-    $newPassword = $_POST['new_password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
+    csrf_verify();
 
-    if (!$otp || strlen($otp) !== 6 || !ctype_digit($otp)) {
-        $error = 'Please enter the 6-digit OTP.';
-    } elseif (!$newPassword || !$confirmPassword) {
-        $error = 'Please enter and confirm your new password.';
-    } elseif ($newPassword !== $confirmPassword) {
-        $error = 'Passwords do not match.';
-    } elseif (strlen($newPassword) < 6) {
-        $error = 'Password must be at least 6 characters.';
-    } elseif (!verify_password_reset_otp($userId, $otp)) {
-        $error = 'Invalid or expired OTP. Please try again.';
+    // Rate limiting: 5 OTP attempts per 15 minutes
+    if (!rate_limit('otp_verify', 5, 900)) {
+        $error = 'Too many attempts. Please try again in 15 minutes.';
     } else {
-        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
-        $stmt = db()->prepare('UPDATE users SET password = ? WHERE id = ?');
-        $stmt->bind_param('si', $hashed, $userId);
-        $stmt->execute();
+        $otp = trim($_POST['otp'] ?? '');
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
 
-        db()->query("DELETE FROM password_resets WHERE user_id = " . (int)$userId);
-        unset($_SESSION['reset_user_id'], $_SESSION['reset_identifier']);
+        if (!$otp || strlen($otp) !== 6 || !ctype_digit($otp)) {
+            $error = 'Please enter the 6-digit OTP.';
+        } elseif (!$newPassword || !$confirmPassword) {
+            $error = 'Please enter and confirm your new password.';
+        } elseif ($newPassword !== $confirmPassword) {
+            $error = 'Passwords do not match.';
+        } elseif (strlen($newPassword) < 6) {
+            $error = 'Password must be at least 6 characters.';
+        } elseif (!verify_password_reset_otp($userId, $otp)) {
+            $error = 'Invalid or expired OTP. Please try again.';
+        } else {
+            $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+            $stmt = db()->prepare('UPDATE users SET password = ? WHERE id = ?');
+            $stmt->bind_param('si', $hashed, $userId);
+            $stmt->execute();
 
-        flash('success', 'Password changed successfully! You can now login with your new password.');
-        redirect('/login.php');
+            db()->query("DELETE FROM password_resets WHERE user_id = " . (int)$userId);
+            log_activity($userId, 'password_reset');
+            unset($_SESSION['reset_user_id'], $_SESSION['reset_identifier'], $_SESSION['reset_last_sent']);
+
+            flash('success', 'Password changed successfully! You can now login with your new password.');
+            redirect('/login.php');
+        }
     }
 }
 
@@ -68,6 +79,7 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form method="POST" class="auth-form">
+                <?= csrf_field() ?>
                 <div class="form-group">
                     <label for="otp">Enter OTP <span class="required">*</span></label>
                     <div class="input-wrap">
@@ -80,6 +92,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="new_password" name="new_password" placeholder="Min 6 characters" autocomplete="new-password" required>
+                        <button type="button" class="pwd-toggle" data-target="new_password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -87,6 +100,7 @@ include __DIR__ . '/includes/header.php';
                     <div class="input-wrap">
                         <i class="fas fa-lock"></i>
                         <input type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter new password" autocomplete="new-password" required>
+                        <button type="button" class="pwd-toggle" data-target="confirm_password" aria-label="Show password"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-check"></i> Reset Password</button>

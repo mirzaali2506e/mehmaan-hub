@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
 $user = require_role('owner');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     $title = trim($_POST['title'] ?? '');
     $description = trim($_POST['description'] ?? '');
     $propertyType = $_POST['property_type'] ?? 'apartment';
@@ -32,15 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $propertyId = $stmt->insert_id;
 
             if (!empty($_FILES['images']['name'][0])) {
-                $uploadDir = UPLOAD_DIR;
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
+                if (!is_dir(UPLOAD_DIR)) mkdir(UPLOAD_DIR, 0755, true);
                 foreach ($_FILES['images']['tmp_name'] as $idx => $tmpName) {
                     if ($_FILES['images']['error'][$idx] === UPLOAD_ERR_OK) {
-                        $ext = pathinfo($_FILES['images']['name'][$idx], PATHINFO_EXTENSION);
-                        $filename = 'property_' . $propertyId . '_' . $idx . '.' . $ext;
-                        if (move_uploaded_file($tmpName, $uploadDir . $filename)) {
+                        $file = [
+                            'name' => $_FILES['images']['name'][$idx],
+                            'tmp_name' => $tmpName,
+                            'size' => $_FILES['images']['size'][$idx],
+                            'error' => $_FILES['images']['error'][$idx]
+                        ];
+                        $filename = validate_and_upload_image($file, UPLOAD_DIR, 'property_' . $propertyId . '_');
+                        if ($filename) {
                             $isPrimary = $idx === 0 ? 1 : 0;
                             $imgStmt = db()->prepare('INSERT INTO property_images (property_id, image_path, is_primary, sort_order) VALUES (?, ?, ?, ?)');
                             $imgStmt->bind_param('isii', $propertyId, $filename, $isPrimary, $idx);
@@ -71,6 +75,7 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form action="<?= SITE_URL ?>/add-property.php" method="POST" enctype="multipart/form-data" class="property-form">
+                <?= csrf_field() ?>
                 <div class="form-section">
                     <h3>Basic Information</h3>
                     <div class="form-grid">

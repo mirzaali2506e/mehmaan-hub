@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
+
+security_headers();
 
 if (current_user()) {
     redirect('/index.php');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
@@ -63,6 +67,7 @@ include __DIR__ . '/includes/header.php';
                 <p>Join Mehmaan Hub to find or list properties</p>
             </div>
             <form method="POST" class="auth-form">
+                <?= csrf_field() ?>
                 <div class="form-group">
                     <label for="name">Full Name</label>
                     <div class="input-wrap">
