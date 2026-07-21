@@ -838,10 +838,19 @@ textarea:focus-visible {
     color: var(--text);
 }
 
+.property-price.dual {
+    font-size: .95rem;
+    font-weight: 700;
+}
+
 .property-price small {
     font-size: .76rem;
     font-weight: 500;
     color: var(--text-tertiary);
+}
+
+.property-price.dual small {
+    font-size: .68rem;
 }
 
 /* ==========================================================================

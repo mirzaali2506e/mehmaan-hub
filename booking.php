@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/security.php';
 $user = require_login();
 
 $propertyId = (int)($_GET['property_id'] ?? 0);
@@ -16,63 +17,47 @@ if ($property['owner_id'] == $user['id']) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     $startDate = $_POST['start_date'] ?? '';
     $endDate = $_POST['end_date'] ?? '';
     $bookingMode = $_POST['booking_mode'] ?? 'month';
+    $numMonths = (int)($_POST['num_months'] ?? 1);
     $notes = trim($_POST['notes'] ?? '');
 
-    if (!$startDate || !$endDate) {
-        flash('error', 'Please select booking dates.');
-    } elseif (strtotime($endDate) < strtotime($startDate)) {
+    if (!$startDate) {
+        flash('error', 'Please select a start date.');
+    } elseif ($bookingMode === 'month' && $numMonths < 1) {
+        flash('error', 'Please enter at least 1 month.');
+    } elseif ($bookingMode === 'day' && !$endDate) {
+        flash('error', 'Please select an end date.');
+    } elseif ($bookingMode === 'day' && $endDate && strtotime($endDate) < strtotime($startDate)) {
         flash('error', 'End date must be after start date.');
     } else {
-        $days = max(1, (strtotime($endDate) - strtotime($startDate)) / 86400);
         $price = $property['price'];
         $pricePerDay = $property['price_per_day'];
         $period = $property['price_period'];
 
-        if ($period === 'per_day') {
-            $totalAmount = $price * $days;
-        } elseif ($period === 'per_month') {
-            $months = max(1, ceil($days / 30));
-            $totalAmount = $price * $months;
+        if ($bookingMode === 'month') {
+            $numMonths = max(1, $numMonths);
+            $totalAmount = $price * $numMonths;
+            // Calculate end date as start + N months
+            $endDate = date('Y-m-d', strtotime("+$numMonths months", strtotime($startDate)));
         } else {
-            if ($bookingMode === 'day') {
-                $dailyRate = $pricePerDay !== null ? $pricePerDay : $price;
-                $totalAmount = $dailyRate * $days;
-            } else {
-                $months = max(1, ceil($days / 30));
-                $totalAmount = $price * $months;
-            }
+            $days = max(1, (strtotime($endDate) - strtotime($startDate)) / 86400);
+            $dailyRate = ($pricePerDay !== null) ? $pricePerDay : $price;
+            $totalAmount = $dailyRate * $days;
         }
 
         $stmt = db()->prepare('INSERT INTO bookings (property_id, tenant_id, start_date, end_date, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?)');
         $stmt->bind_param('iissds', $propertyId, $user['id'], $startDate, $endDate, $totalAmount, $notes);
 
         if ($stmt->execute()) {
+            log_activity($user['id'], 'create_booking', 'property', $propertyId);
             flash('success', 'Booking request sent! The owner will confirm shortly.');
             redirect('/dashboard.php');
         } else {
             flash('error', 'Failed to create booking.');
         }
-    }
-}
-
-$days = 0;
-$totalAmount = 0;
-$previewStart = $_GET['start_date'] ?? '';
-$previewEnd = $_GET['end_date'] ?? '';
-if ($previewStart && $previewEnd && strtotime($previewEnd) >= strtotime($previewStart)) {
-    $days = max(1, (strtotime($previewEnd) - strtotime($previewStart)) / 86400);
-    $period = $property['price_period'];
-    if ($period === 'per_day') {
-        $totalAmount = $property['price'] * $days;
-    } elseif ($period === 'both') {
-        $dailyRate = $property['price_per_day'] !== null ? $property['price_per_day'] : $property['price'];
-        $totalAmount = $dailyRate * $days;
-    } else {
-        $months = max(1, ceil($days / 30));
-        $totalAmount = $property['price'] * $months;
     }
 }
 
@@ -113,10 +98,12 @@ include __DIR__ . '/includes/header.php';
             </div>
 
             <form method="POST" class="booking-form">
+                <?= csrf_field() ?>
+
                 <?php if ($period === 'both'): ?>
                 <div class="form-group">
                     <label for="booking_mode">Booking Type <span class="required">*</span></label>
-                    <select id="booking_mode" name="booking_mode" onchange="updateTotal()">
+                    <select id="booking_mode" name="booking_mode" onchange="toggleBookingMode()">
                         <option value="month">Monthly</option>
                         <option value="day">Daily</option>
                     </select>
@@ -127,16 +114,30 @@ include __DIR__ . '/includes/header.php';
                 <input type="hidden" name="booking_mode" value="month">
                 <?php endif; ?>
 
-                <div class="form-grid">
+                <!-- Monthly booking: start date + number of months -->
+                <div id="monthlyFields" class="form-grid">
                     <div class="form-group">
                         <label for="start_date">Start Date <span class="required">*</span></label>
                         <input type="date" id="start_date" name="start_date" required onchange="updateTotal()">
                     </div>
                     <div class="form-group">
-                        <label for="end_date">End Date <span class="required">*</span></label>
-                        <input type="date" id="end_date" name="end_date" required onchange="updateTotal()">
+                        <label for="num_months">Number of Months <span class="required">*</span></label>
+                        <input type="number" id="num_months" name="num_months" min="1" value="1" required onchange="updateTotal()">
                     </div>
                 </div>
+
+                <!-- Daily booking: check-in + check-out -->
+                <div id="dailyFields" class="form-grid" style="display:none;">
+                    <div class="form-group">
+                        <label for="start_date_day">Check-In Date <span class="required">*</span></label>
+                        <input type="date" id="start_date_day" name="start_date_day" onchange="syncStartDate()">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date">Check-Out Date <span class="required">*</span></label>
+                        <input type="date" id="end_date" name="end_date" onchange="updateTotal()">
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label for="notes">Notes (optional)</label>
                     <textarea id="notes" name="notes" rows="3" placeholder="Any special requests..."></textarea>
@@ -168,9 +169,41 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script>
+function toggleBookingMode() {
+    const modeEl = document.getElementById('booking_mode');
+    const mode = modeEl ? modeEl.value : 'month';
+    const monthlyFields = document.getElementById('monthlyFields');
+    const dailyFields = document.getElementById('dailyFields');
+    const startInput = document.getElementById('start_date');
+    const startDayInput = document.getElementById('start_date_day');
+
+    if (mode === 'day') {
+        monthlyFields.style.display = 'none';
+        dailyFields.style.display = 'grid';
+        // Transfer date value
+        if (startInput.value) startDayInput.value = startInput.value;
+        // start_date is still the real hidden field — sync it
+        startInput.name = 'start_date';
+        startDayInput.name = 'start_date_day';
+    } else {
+        monthlyFields.style.display = 'grid';
+        dailyFields.style.display = 'none';
+        if (startDayInput.value) startInput.value = startDayInput.value;
+    }
+    updateTotal();
+}
+
+function syncStartDate() {
+    const startDayInput = document.getElementById('start_date_day');
+    const startInput = document.getElementById('start_date');
+    if (startDayInput.value) startInput.value = startDayInput.value;
+    updateTotal();
+}
+
 function updateTotal() {
+    const modeEl = document.getElementById('booking_mode');
+    const mode = modeEl ? modeEl.value : 'month';
     const start = document.getElementById('start_date').value;
-    const end = document.getElementById('end_date').value;
     const durationRow = document.getElementById('durationRow');
     const totalRow = document.getElementById('totalRow');
     const durationText = document.getElementById('durationText');
@@ -180,47 +213,58 @@ function updateTotal() {
     const price = <?= $property['price'] ?>;
     const pricePerDay = <?= $property['price_per_day'] !== null ? $property['price_per_day'] : 'null' ?>;
     const period = '<?= $period ?>';
-    let mode = 'month';
-    const modeEl = document.getElementById('booking_mode');
-    if (modeEl) mode = modeEl.value;
 
-    if (period === 'per_day') {
+    // Determine effective mode
+    let effectiveMode = mode;
+    if (period === 'per_day') effectiveMode = 'day';
+    if (period === 'per_month') effectiveMode = 'month';
+
+    if (effectiveMode === 'day') {
+        const daily = pricePerDay !== null ? pricePerDay : price;
         rateLabel.textContent = 'Daily Rate';
-        rateValue.textContent = 'Rs ' + price.toLocaleString();
-    } else if (period === 'both') {
-        if (mode === 'day') {
-            const daily = pricePerDay !== null ? pricePerDay : price;
-            rateLabel.textContent = 'Daily Rate';
-            rateValue.textContent = 'Rs ' + daily.toLocaleString();
-        } else {
-            rateLabel.textContent = 'Monthly Rent';
-            rateValue.textContent = 'Rs ' + price.toLocaleString();
-        }
+        rateValue.textContent = 'Rs ' + daily.toLocaleString();
     } else {
         rateLabel.textContent = 'Monthly Rent';
         rateValue.textContent = 'Rs ' + price.toLocaleString();
     }
 
-    if (start && end) {
-        const days = Math.max(1, (new Date(end) - new Date(start)) / 86400000);
-        let total, label;
-        if (period === 'per_day' || (period === 'both' && mode === 'day')) {
-            const daily = (period === 'both' && pricePerDay !== null) ? pricePerDay : price;
-            total = daily * days;
-            label = days + ' day' + (days > 1 ? 's' : '');
-        } else {
-            const months = Math.max(1, Math.ceil(days / 30));
-            total = price * months;
-            label = months + ' month' + (months > 1 ? 's' : '');
-        }
+    if (effectiveMode === 'month' && start) {
+        const numMonths = Math.max(1, parseInt(document.getElementById('num_months').value) || 1);
+        const total = price * numMonths;
         durationRow.style.display = 'flex';
         totalRow.style.display = 'flex';
-        durationText.textContent = label;
+        durationText.textContent = numMonths + ' month' + (numMonths > 1 ? 's' : '');
         totalText.textContent = 'Rs ' + total.toLocaleString();
+    } else if (effectiveMode === 'day' && start) {
+        const end = document.getElementById('end_date').value;
+        if (end) {
+            const days = Math.max(1, (new Date(end) - new Date(start)) / 86400000);
+            const daily = pricePerDay !== null ? pricePerDay : price;
+            const total = daily * days;
+            durationRow.style.display = 'flex';
+            totalRow.style.display = 'flex';
+            durationText.textContent = days + ' day' + (days > 1 ? 's' : '');
+            totalText.textContent = 'Rs ' + total.toLocaleString();
+        } else {
+            durationRow.style.display = 'none';
+            totalRow.style.display = 'none';
+        }
     } else {
         durationRow.style.display = 'none';
         totalRow.style.display = 'none';
     }
 }
+
+// On page load: if period forces a mode, set it up
+(function() {
+    const period = '<?= $period ?>';
+    if (period === 'per_day') {
+        document.getElementById('monthlyFields').style.display = 'none';
+        document.getElementById('dailyFields').style.display = 'grid';
+    } else if (period === 'per_month') {
+        document.getElementById('monthlyFields').style.display = 'grid';
+        document.getElementById('dailyFields').style.display = 'none';
+    }
+})();
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

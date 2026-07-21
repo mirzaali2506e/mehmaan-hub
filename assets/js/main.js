@@ -79,10 +79,15 @@
 function toggleWishlist(e, propertyId) {
     e.preventDefault();
     e.stopPropagation();
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
     fetch(SITE_URL + '/api/wishlist.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'property_id=' + propertyId
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': csrfToken
+        },
+        body: 'property_id=' + propertyId + '&csrf_token=' + encodeURIComponent(csrfToken)
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -102,6 +107,8 @@ function toggleWishlist(e, propertyId) {
                     btn.innerHTML = '<i class="fas fa-heart"></i> Remove from Wishlist';
                 }
             }
+            // Show a small toast notification — stay on the same page
+            showWishlistToast(data.action);
         } else {
             window.location.href = SITE_URL + '/login.php';
         }
@@ -109,6 +116,22 @@ function toggleWishlist(e, propertyId) {
     .catch(function() {
         window.location.href = SITE_URL + '/login.php';
     });
+}
+
+// Lightweight toast — no page redirect
+function showWishlistToast(action) {
+    var existing = document.getElementById('wishlistToast');
+    if (existing) existing.remove();
+    var toast = document.createElement('div');
+    toast.id = 'wishlistToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);opacity:0;transition:opacity .3s;';
+    toast.innerHTML = (action === 'added' ? '<i class="fas fa-heart" style="color:#EF4444;margin-right:6px;"></i>Added to wishlist' : '<i class="fas fa-check" style="color:#14B8A6;margin-right:6px;"></i>Removed from wishlist');
+    document.body.appendChild(toast);
+    requestAnimationFrame(function() { toast.style.opacity = '1'; });
+    setTimeout(function() {
+        toast.style.opacity = '0';
+        setTimeout(function() { toast.remove(); }, 300);
+    }, 2500);
 }
 
 // Gallery image change

@@ -53,8 +53,10 @@ foreach ($properties as $property) {
     $img = get_primary_image($property['id']);
     $periodLabel = $property['price_period'] === 'per_day' ? 'day' : 'month';
     $priceDisplay = format_price($property['price']) . '<small>/' . $periodLabel . '</small>';
+    $priceClass = '';
     if ($property['price_period'] === 'both' && $property['price_per_day'] !== null) {
         $priceDisplay = format_price($property['price']) . '<small>/mo</small> &middot; ' . format_price($property['price_per_day']) . '<small>/day</small>';
+        $priceClass = ' dual';
     } elseif ($property['price_period'] === 'both') {
         $priceDisplay = format_price($property['price']) . '<small>/month</small>';
     }
@@ -82,7 +84,7 @@ foreach ($properties as $property) {
                 <?php endif; ?>
             </div>
             <div class="property-footer">
-                <span class="property-price"><?= $priceDisplay ?></span>
+                <span class="property-price<?= $priceClass ?>"><?= $priceDisplay ?></span>
                 <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
             </div>
         </div>

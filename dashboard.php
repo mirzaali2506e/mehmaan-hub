@@ -143,7 +143,7 @@ include __DIR__ . '/includes/header.php';
                                     <span><i class="fas fa-bath"></i> <?= (int)$p['bathrooms'] ?> Baths</span>
                                 </div>
                                 <div class="property-footer">
-                                    <span class="property-price"><?php if ($p['price_period'] === 'both' && $p['price_per_day'] !== null): ?><?= format_price($p['price']) ?><small>/mo</small> &middot; <?= format_price($p['price_per_day']) ?><small>/day</small><?php else: ?><?= format_price($p['price']) ?><small>/<?= $p['price_period'] === 'per_day' ? 'day' : 'month' ?></small><?php endif; ?></span>
+                                    <span class="property-price<?php if ($p['price_period'] === 'both' && $p['price_per_day'] !== null): ?> dual<?php endif; ?>"><?php if ($p['price_period'] === 'both' && $p['price_per_day'] !== null): ?><?= format_price($p['price']) ?><small>/mo</small> &middot; <?= format_price($p['price_per_day']) ?><small>/day</small><?php else: ?><?= format_price($p['price']) ?><small>/<?= $p['price_period'] === 'per_day' ? 'day' : 'month' ?></small><?php endif; ?></span>
                                     <button class="btn btn-danger btn-sm" onclick="toggleWishlist(event, <?= $p['id'] ?>)">Remove</button>
                                 </div>
                             </div>
