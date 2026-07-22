@@ -89,7 +89,7 @@ include __DIR__ . '/includes/header.php';
                         <tbody>
                             <?php foreach ($myBookings as $b): ?>
                             <tr>
-                                <td>
+                                <td data-label="Property">
                                     <div class="table-property">
                                         <?php if (!empty($b['primary_image'])): ?>
                                             <img src="<?= e(image_url($b['primary_image'])) ?>" alt="">
@@ -99,10 +99,10 @@ include __DIR__ . '/includes/header.php';
                                         <a href="<?= SITE_URL ?>/property-details.php?id=<?= $b['property_id'] ?>"><strong><?= e($b['property_title']) ?></strong></a>
                                     </div>
                                 </td>
-                                <td><?= date('M d', strtotime($b['start_date'])) ?> - <?= date('M d, Y', strtotime($b['end_date'])) ?></td>
-                                <td><?= format_price($b['total_amount']) ?></td>
-                                <td><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
-                                <td>
+                                <td data-label="Dates"><?= date('M d', strtotime($b['start_date'])) ?> - <?= date('M d, Y', strtotime($b['end_date'])) ?></td>
+                                <td data-label="Amount"><?= format_price($b['total_amount']) ?></td>
+                                <td data-label="Status"><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
+                                <td data-label="Actions">
                                     <?php if ($b['status'] === 'pending'): ?>
                                         <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=cancel" class="btn btn-danger btn-sm">Cancel</a>
                                     <?php endif; ?>

@@ -95,7 +95,7 @@ include __DIR__ . '/includes/header.php';
                         <tbody>
                             <?php foreach ($myProperties as $p): ?>
                             <tr>
-                                <td>
+                                <td data-label="Property">
                                     <div class="table-property">
                                         <?php if (!empty($p['primary_image'])): ?>
                                             <img src="<?= e(image_url($p['primary_image'])) ?>" alt="">
@@ -108,10 +108,10 @@ include __DIR__ . '/includes/header.php';
                                         </div>
                                     </div>
                                 </td>
-                                <td><?= get_property_type_label($p['property_type']) ?></td>
-                                <td><?php if ($p['price_period'] === 'both' && $p['price_per_day'] !== null): ?><?= format_price($p['price']) ?><small style="color:#888"> /mo</small> &middot; <?= format_price($p['price_per_day']) ?><small style="color:#888"> /day</small><?php else: ?><?= format_price($p['price']) ?><small style="color:#888"> /<?= $p['price_period'] === 'per_day' ? 'day' : 'month' ?></small><?php endif; ?></td>
-                                <td><span class="status-badge status-<?= e($p['status']) ?>"><?= ucfirst(e($p['status'])) ?></span></td>
-                                <td>
+                                <td data-label="Type"><?= get_property_type_label($p['property_type']) ?></td>
+                                <td data-label="Price"><?php if ($p['price_period'] === 'both' && $p['price_per_day'] !== null): ?><?= format_price($p['price']) ?><small style="color:#888"> /mo</small> &middot; <?= format_price($p['price_per_day']) ?><small style="color:#888"> /day</small><?php else: ?><?= format_price($p['price']) ?><small style="color:#888"> /<?= $p['price_period'] === 'per_day' ? 'day' : 'month' ?></small><?php endif; ?></td>
+                                <td data-label="Status"><span class="status-badge status-<?= e($p['status']) ?>"><?= ucfirst(e($p['status'])) ?></span></td>
+                                <td data-label="Actions">
                                     <a href="<?= SITE_URL ?>/property-details.php?id=<?= $p['id'] ?>" class="btn-icon" title="View"><i class="fas fa-eye"></i></a>
                                     <a href="<?= SITE_URL ?>/edit-property.php?id=<?= $p['id'] ?>" class="btn-icon" title="Edit"><i class="fas fa-edit"></i></a>
                                     <a href="<?= SITE_URL ?>/api/delete-property.php?id=<?= $p['id'] ?>" class="btn-icon btn-danger" title="Delete" onclick="return confirm('Delete this property?')"><i class="fas fa-trash"></i></a>
@@ -147,7 +147,7 @@ include __DIR__ . '/includes/header.php';
                         <tbody>
                             <?php foreach ($ownerBookings as $b): ?>
                             <tr>
-                                <td>
+                                <td data-label="Property">
                                     <div class="table-property">
                                         <?php if (!empty($b['primary_image'])): ?>
                                             <img src="<?= e(image_url($b['primary_image'])) ?>" alt="">
@@ -157,14 +157,14 @@ include __DIR__ . '/includes/header.php';
                                         <strong><?= e($b['property_title']) ?></strong>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Tenant">
                                     <strong><?= e($b['tenant_name']) ?></strong><br>
                                     <small><?= e($b['tenant_phone'] ?? '') ?></small>
                                 </td>
-                                <td><?= date('M d', strtotime($b['start_date'])) ?> - <?= date('M d, Y', strtotime($b['end_date'])) ?></td>
-                                <td><?= format_price($b['total_amount']) ?></td>
-                                <td><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
-                                <td>
+                                <td data-label="Dates"><?= date('M d', strtotime($b['start_date'])) ?> - <?= date('M d, Y', strtotime($b['end_date'])) ?></td>
+                                <td data-label="Amount"><?= format_price($b['total_amount']) ?></td>
+                                <td data-label="Status"><span class="status-badge status-<?= e($b['status']) ?>"><?= ucfirst(e($b['status'])) ?></span></td>
+                                <td data-label="Actions">
                                     <?php if ($b['status'] === 'pending'): ?>
                                         <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=confirm" class="btn btn-success btn-sm">Confirm</a>
                                         <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=cancel" class="btn btn-danger btn-sm">Cancel</a>
