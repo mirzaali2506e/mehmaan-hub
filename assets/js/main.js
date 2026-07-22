@@ -79,6 +79,7 @@
 function toggleWishlist(e, propertyId) {
     e.preventDefault();
     e.stopPropagation();
+    const btn = e.currentTarget;
     fetch(SITE_URL + '/api/wishlist.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -87,7 +88,6 @@ function toggleWishlist(e, propertyId) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            const btn = e.currentTarget;
             if (btn.classList.contains('wishlist-btn')) {
                 btn.classList.toggle('active');
             } else {
@@ -102,14 +102,13 @@ function toggleWishlist(e, propertyId) {
                     btn.innerHTML = '<i class="fas fa-heart"></i> Remove from Wishlist';
                 }
             }
-            // Show a small toast notification — stay on the same page
             showWishlistToast(data.action);
         } else {
-            window.location.href = SITE_URL + '/login.php';
+            showWishlistToast('error');
         }
     })
     .catch(function() {
-        window.location.href = SITE_URL + '/login.php';
+        showWishlistToast('error');
     });
 }
 
@@ -120,7 +119,7 @@ function showWishlistToast(action) {
     var toast = document.createElement('div');
     toast.id = 'wishlistToast';
     toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);opacity:0;transition:opacity .3s;';
-    toast.innerHTML = (action === 'added' ? '<i class="fas fa-heart" style="color:#EF4444;margin-right:6px;"></i>Added to wishlist' : '<i class="fas fa-check" style="color:#14B8A6;margin-right:6px;"></i>Removed from wishlist');
+    toast.innerHTML = (action === 'added' ? '<i class="fas fa-heart" style="color:#EF4444;margin-right:6px;"></i>Added to wishlist' : action === 'removed' ? '<i class="fas fa-check" style="color:#14B8A6;margin-right:6px;"></i>Removed from wishlist' : '<i class="fas fa-exclamation-circle" style="color:#F59E0B;margin-right:6px;"></i>Something went wrong');
     document.body.appendChild(toast);
     requestAnimationFrame(function() { toast.style.opacity = '1'; });
     setTimeout(function() {

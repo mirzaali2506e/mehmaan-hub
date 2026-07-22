@@ -5,6 +5,8 @@ if (current_user()) {
     redirect('/index.php');
 }
 
+$prefillRole = ($_GET['role'] ?? '') === 'owner' ? 'owner' : 'tenant';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -88,7 +90,7 @@ include __DIR__ . '/includes/header.php';
                     <label>Account Type</label>
                     <div class="role-selector">
                         <label class="role-option">
-                            <input type="radio" name="role" value="tenant" checked>
+                            <input type="radio" name="role" value="tenant" <?= $prefillRole === 'tenant' ? 'checked' : '' ?>>
                             <div class="role-card">
                                 <i class="fas fa-user"></i>
                                 <span>Tenant</span>
@@ -96,7 +98,7 @@ include __DIR__ . '/includes/header.php';
                             </div>
                         </label>
                         <label class="role-option">
-                            <input type="radio" name="role" value="owner">
+                            <input type="radio" name="role" value="owner" <?= $prefillRole === 'owner' ? 'checked' : '' ?>>
                             <div class="role-card">
                                 <i class="fas fa-building"></i>
                                 <span>Owner</span>

@@ -143,17 +143,23 @@ include __DIR__ . '/includes/header.php';
     </div>
 </section>
 
+<?php if (!$user || $user['role'] === 'tenant'): ?>
 <section class="section">
     <div class="container">
         <div class="cta-banner">
             <div class="cta-content">
                 <h2>Have a property to rent out?</h2>
                 <p>List your property on Mehmaan Hub and reach thousands of potential tenants.</p>
-                <a href="<?= SITE_URL ?>/register.php" class="btn btn-light">Become a Host</a>
+                <?php if ($user && $user['role'] === 'tenant'): ?>
+                    <a href="<?= SITE_URL ?>/become-host.php" class="btn btn-light">Become a Host</a>
+                <?php else: ?>
+                    <a href="<?= SITE_URL ?>/register.php?role=owner" class="btn btn-light">Become a Host</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </section>
+<?php endif; ?>
 
 <script>
 let currentOffset = 6;
