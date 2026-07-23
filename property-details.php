@@ -210,8 +210,20 @@ include __DIR__ . '/includes/header.php';
                             <button class="btn btn-outline btn-block" onclick="toggleWishlist(event, <?= $property['id'] ?>)">
                                 <i class="fas fa-heart"></i> <?= is_in_wishlist($user['id'], $property['id']) ? 'Remove from Wishlist' : 'Add to Wishlist' ?>
                             </button>
-                        <?php else: ?>
+                        <?php else:
+                            $confirmedBookings = get_confirmed_bookings_for_property($property['id']);
+                        ?>
                             <a href="<?= SITE_URL ?>/booking.php?property_id=<?= $property['id'] ?>" class="btn btn-primary btn-block">Book Now</a>
+                            <?php if (!empty($confirmedBookings)): ?>
+                                <div class="booked-dates-notice">
+                                    <h4><i class="fas fa-calendar-times"></i> Already Booked Dates</h4>
+                                    <ul>
+                                        <?php foreach ($confirmedBookings as $cb): ?>
+                                            <li><?= date('M d, Y', strtotime($cb['start_date'])) ?> — <?= date('M d, Y', strtotime($cb['end_date'])) ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
                             <button class="btn btn-outline btn-block" onclick="toggleWishlist(event, <?= $property['id'] ?>)">
                                 <i class="fas fa-heart"></i> <?= is_in_wishlist($user['id'], $property['id']) ? 'Remove from Wishlist' : 'Add to Wishlist' ?>
                             </button>

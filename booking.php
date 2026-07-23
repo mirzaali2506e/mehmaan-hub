@@ -33,12 +33,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$startDate) {
         flash('error', 'Please select a start date.');
+    } elseif (strtotime($startDate) < strtotime(date('Y-m-d'))) {
+        flash('error', 'Start date cannot be in the past.');
     } elseif ($bookingMode === 'month' && $numMonths < 1) {
         flash('error', 'Please enter at least 1 month.');
     } elseif ($bookingMode === 'day' && !$endDate) {
         flash('error', 'Please select an end date.');
     } elseif ($bookingMode === 'day' && $endDate && strtotime($endDate) < strtotime($startDate)) {
         flash('error', 'End date must be after start date.');
+    } elseif ($bookingMode === 'day' && $endDate && strtotime($endDate) < strtotime(date('Y-m-d'))) {
+        flash('error', 'End date cannot be in the past.');
     } else {
         $price = $property['price'];
         $pricePerDay = $property['price_per_day'];
@@ -47,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($bookingMode === 'month') {
             $numMonths = max(1, $numMonths);
             $totalAmount = $price * $numMonths;
-            // Calculate end date as start + N months
             $endDate = date('Y-m-d', strtotime("+$numMonths months", strtotime($startDate)));
         } else {
             $days = max(1, (strtotime($endDate) - strtotime($startDate)) / 86400);
@@ -55,14 +58,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $totalAmount = $dailyRate * $days;
         }
 
-        $stmt = db()->prepare('INSERT INTO bookings (property_id, tenant_id, start_date, end_date, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->bind_param('iissds', $propertyId, $user['id'], $startDate, $endDate, $totalAmount, $notes);
+        $overlapStmt = db()->prepare("SELECT b.start_date, b.end_date FROM bookings b WHERE b.property_id = ? AND b.status = 'confirmed' AND b.start_date < ? AND b.end_date > ?");
+        $overlapStmt->bind_param('iss', $propertyId, $endDate, $startDate);
+        $overlapStmt->execute();
+        $overlapResult = $overlapStmt->get_result();
 
-        if ($stmt->execute()) {
-            flash('success', 'Booking request sent! The owner will confirm shortly.');
-            redirect('/dashboard.php');
+        if ($overlapResult->num_rows > 0) {
+            $overlap = $overlapResult->fetch_assoc();
+            flash('error', 'This property is already booked from ' . date('M d, Y', strtotime($overlap['start_date'])) . ' to ' . date('M d, Y', strtotime($overlap['end_date'])) . '. Please choose different dates.');
         } else {
-            flash('error', 'Failed to create booking.');
+            $stmt = db()->prepare('INSERT INTO bookings (property_id, tenant_id, start_date, end_date, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?)');
+            $stmt->bind_param('iissds', $propertyId, $user['id'], $startDate, $endDate, $totalAmount, $notes);
+
+            if ($stmt->execute()) {
+                flash('success', 'Booking request sent! The owner will confirm shortly.');
+                redirect('/dashboard.php');
+            } else {
+                flash('error', 'Failed to create booking.');
+            }
         }
     }
 }
@@ -122,7 +135,7 @@ include __DIR__ . '/includes/header.php';
                 <div id="monthlyFields" class="form-grid">
                     <div class="form-group">
                         <label for="start_date">Start Date <span class="required">*</span></label>
-                        <input type="date" id="start_date" name="start_date" required onchange="updateTotal()">
+                        <input type="date" id="start_date" name="start_date" min="<?= date('Y-m-d') ?>" required onchange="updateTotal()">
                     </div>
                     <div class="form-group">
                         <label for="num_months">Number of Months <span class="required">*</span></label>
@@ -134,11 +147,11 @@ include __DIR__ . '/includes/header.php';
                 <div id="dailyFields" class="form-grid" style="display:none;">
                     <div class="form-group">
                         <label for="start_date_day">Check-In Date <span class="required">*</span></label>
-                        <input type="date" id="start_date_day" name="start_date_day" onchange="syncStartDate()">
+                        <input type="date" id="start_date_day" name="start_date_day" min="<?= date('Y-m-d') ?>" onchange="syncStartDate()">
                     </div>
                     <div class="form-group">
                         <label for="end_date">Check-Out Date <span class="required">*</span></label>
-                        <input type="date" id="end_date" name="end_date" onchange="updateTotal()">
+                        <input type="date" id="end_date" name="end_date" min="<?= date('Y-m-d') ?>" onchange="updateTotal()">
                     </div>
                 </div>
 

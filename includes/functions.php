@@ -197,6 +197,13 @@ function get_user_booked_property_ids($userId) {
     return array_column($rows, 'property_id');
 }
 
+function get_confirmed_bookings_for_property($propertyId) {
+    $stmt = db()->prepare("SELECT start_date, end_date FROM bookings WHERE property_id = ? AND status = 'confirmed' ORDER BY start_date ASC");
+    $stmt->bind_param('i', $propertyId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
 function get_reviews($propertyId) {
     $stmt = db()->prepare('SELECT r.*, u.name as user_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.property_id = ? ORDER BY r.created_at DESC');
     $stmt->bind_param('i', $propertyId);

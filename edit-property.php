@@ -94,6 +94,14 @@ include __DIR__ . '/includes/header.php';
                         </div>
                         <div class="form-group full">
                             <label for="description">Description</label>
+                            <div class="description-toolbar">
+                                <button type="button" class="btn btn-ai" id="generateDescBtn" onclick="generateDescription()">
+                                    <i class="fas fa-magic"></i> <span id="generateBtnText">Generate with AI</span>
+                                </button>
+                                <button type="button" class="btn btn-ai btn-ai-regen" id="regenerateDescBtn" onclick="generateDescription()" style="display:none;">
+                                    <i class="fas fa-sync-alt"></i> Regenerate
+                                </button>
+                            </div>
                             <textarea id="description" name="description" rows="4"><?= e($property['description']) ?></textarea>
                         </div>
                     </div>
@@ -239,6 +247,57 @@ function toggleDailyPrice() {
         priceHint.textContent = 'Monthly rent amount';
         priceInput.placeholder = 'e.g. 50000 (monthly)';
     }
+}
+function generateDescription() {
+    var btn = document.getElementById('generateDescBtn');
+    var btnText = document.getElementById('generateBtnText');
+    var regenBtn = document.getElementById('regenerateDescBtn');
+    var textarea = document.getElementById('description');
+
+    btn.disabled = true;
+    btnText.textContent = 'Generating...';
+
+    var data = {
+        title: document.getElementById('title').value,
+        property_type: document.getElementById('property_type').value,
+        city: document.getElementById('city').value,
+        area: document.getElementById('area').value,
+        address: document.getElementById('address').value,
+        bedrooms: document.getElementById('bedrooms').value,
+        bathrooms: document.getElementById('bathrooms').value,
+        area_sqft: document.getElementById('area_sqft').value,
+        price: document.getElementById('price').value,
+        price_period: document.getElementById('price_period').value,
+        price_per_day: document.getElementById('price_per_day') ? document.getElementById('price_per_day').value : '',
+        is_furnished: document.querySelector('input[name="is_furnished"]') && document.querySelector('input[name="is_furnished"]').checked ? 1 : 0,
+        has_parking: document.querySelector('input[name="has_parking"]') && document.querySelector('input[name="has_parking"]').checked ? 1 : 0,
+        has_wifi: document.querySelector('input[name="has_wifi"]') && document.querySelector('input[name="has_wifi"]').checked ? 1 : 0,
+        has_ac: document.querySelector('input[name="has_ac"]') && document.querySelector('input[name="has_ac"]').checked ? 1 : 0,
+        has_generator: document.querySelector('input[name="has_generator"]') && document.querySelector('input[name="has_generator"]').checked ? 1 : 0
+    };
+
+    fetch(SITE_URL + '/api/generate-description.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        btn.disabled = false;
+        btnText.textContent = 'Generate with AI';
+        if (res.error) {
+            alert('Error: ' + res.error);
+        } else {
+            textarea.value = res.description;
+            btn.style.display = 'none';
+            regenBtn.style.display = 'inline-flex';
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btnText.textContent = 'Generate with AI';
+        alert('Failed to generate description. Please try again.');
+    });
 }
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
