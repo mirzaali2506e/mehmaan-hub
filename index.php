@@ -3,6 +3,10 @@ require_once __DIR__ . '/includes/functions.php';
 $user = current_user();
 $featuredProperties = get_all_properties(6);
 $totalProperties = count(get_all_properties());
+$bookedSet = [];
+if ($user && $user['role'] === 'tenant') {
+    $bookedSet = array_flip(get_user_booked_property_ids($user['id']));
+}
 $cities = [];
 $res = db()->query("SELECT DISTINCT city FROM properties WHERE city != '' AND status = 'available' ORDER BY city");
 while ($row = $res->fetch_assoc()) {
@@ -86,6 +90,9 @@ include __DIR__ . '/includes/header.php';
                             <?php if ($property['featured']): ?>
                                 <span class="badge badge-featured">Featured</span>
                             <?php endif; ?>
+                            <?php if (isset($bookedSet[$property['id']])): ?>
+                                <span class="badge badge-booked">Booked by You</span>
+                            <?php endif; ?>
                             <span class="badge badge-type"><?= get_property_type_label($property['property_type']) ?></span>
                         </a>
                         <div class="property-body">
@@ -100,7 +107,11 @@ include __DIR__ . '/includes/header.php';
                             </div>
                             <div class="property-footer">
                                 <span class="property-price<?= $priceClass ?>"><?= $priceDisplay ?></span>
-                                <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
+                                <?php if (isset($bookedSet[$property['id']])): ?>
+                                    <span class="badge badge-booked badge-booked-sm">Booked</span>
+                                <?php else: ?>
+                                    <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

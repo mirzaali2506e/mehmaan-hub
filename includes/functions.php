@@ -182,6 +182,21 @@ function is_in_wishlist($userId, $propertyId) {
     return $stmt->get_result()->num_rows > 0;
 }
 
+function has_user_booked_property($userId, $propertyId) {
+    $stmt = db()->prepare("SELECT id FROM bookings WHERE tenant_id = ? AND property_id = ? AND status IN ('pending','confirmed')");
+    $stmt->bind_param('ii', $userId, $propertyId);
+    $stmt->execute();
+    return $stmt->get_result()->num_rows > 0;
+}
+
+function get_user_booked_property_ids($userId) {
+    $stmt = db()->prepare("SELECT DISTINCT property_id FROM bookings WHERE tenant_id = ? AND status IN ('pending','confirmed')");
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    return array_column($rows, 'property_id');
+}
+
 function get_reviews($propertyId) {
     $stmt = db()->prepare('SELECT r.*, u.name as user_name FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.property_id = ? ORDER BY r.created_at DESC');
     $stmt->bind_param('i', $propertyId);

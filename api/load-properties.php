@@ -48,6 +48,13 @@ if ($params) {
 $stmt->execute();
 $properties = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+$bookedIds = [];
+$apiUser = current_user();
+if ($apiUser && $apiUser['role'] === 'tenant') {
+    $bookedIds = get_user_booked_property_ids($apiUser['id']);
+}
+$bookedSet = array_flip($bookedIds);
+
 $html = '';
 foreach ($properties as $property) {
     $img = get_primary_image($property['id']);
@@ -60,6 +67,7 @@ foreach ($properties as $property) {
     } elseif ($property['price_period'] === 'both') {
         $priceDisplay = format_price($property['price']) . '<small>/month</small>';
     }
+    $isBooked = isset($bookedSet[$property['id']]);
     ob_start(); ?>
     <div class="property-card">
         <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="property-img">
@@ -70,6 +78,9 @@ foreach ($properties as $property) {
             <?php endif; ?>
             <?php if ($property['featured']): ?>
                 <span class="badge badge-featured">Featured</span>
+            <?php endif; ?>
+            <?php if ($isBooked): ?>
+                <span class="badge badge-booked">Booked by You</span>
             <?php endif; ?>
             <span class="badge badge-type"><?= get_property_type_label($property['property_type']) ?></span>
         </a>
@@ -85,7 +96,11 @@ foreach ($properties as $property) {
             </div>
             <div class="property-footer">
                 <span class="property-price<?= $priceClass ?>"><?= $priceDisplay ?></span>
-                <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
+                <?php if ($isBooked): ?>
+                    <span class="badge badge-booked badge-booked-sm">Booked</span>
+                <?php else: ?>
+                    <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -2506,6 +2506,84 @@ textarea:focus-visible {
     box-shadow: var(--shadow-sm);
 }
 
+.form-header {
+    text-align: center;
+    margin-bottom: var(--sp-8);
+}
+
+.form-header h1 {
+    font-size: 1.6rem;
+    margin-bottom: 4px;
+}
+
+.form-header p {
+    color: var(--text-secondary);
+    font-size: .9rem;
+}
+
+.profile-view {
+    margin-bottom: var(--sp-6);
+}
+
+.profile-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--sp-4) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-info-row:last-child {
+    border-bottom: none;
+}
+
+.profile-info-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.profile-info-label i {
+    color: var(--primary);
+    width: 16px;
+}
+
+.profile-info-value {
+    font-size: .92rem;
+    color: var(--text);
+    font-weight: 500;
+    text-align: right;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--sp-3);
+    margin-top: var(--sp-6);
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+.badge-booked {
+    top: 14px;
+    right: 14px;
+    background: var(--success);
+    color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, .35);
+}
+
+.badge-booked-sm {
+    position: static;
+    box-shadow: none;
+    font-size: .72rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-xs);
+}
+
 /* ==========================================================================
    25. CONTACT & ABOUT PAGES
    ========================================================================== */

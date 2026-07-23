@@ -203,6 +203,13 @@ include __DIR__ . '/includes/header.php';
                     <?php if ($user): ?>
                         <?php if ($property['owner_id'] == $user['id']): ?>
                             <div class="owner-own-notice">This is your property</div>
+                        <?php elseif (has_user_booked_property($user['id'], $property['id'])): ?>
+                            <div class="owner-own-notice" style="background:var(--success-50, #ecfdf5); color:var(--success, #10b981); border-color:var(--success, #10b981);">
+                                <i class="fas fa-check-circle"></i> You already booked this property
+                            </div>
+                            <button class="btn btn-outline btn-block" onclick="toggleWishlist(event, <?= $property['id'] ?>)">
+                                <i class="fas fa-heart"></i> <?= is_in_wishlist($user['id'], $property['id']) ? 'Remove from Wishlist' : 'Add to Wishlist' ?>
+                            </button>
                         <?php else: ?>
                             <a href="<?= SITE_URL ?>/booking.php?property_id=<?= $property['id'] ?>" class="btn btn-primary btn-block">Book Now</a>
                             <button class="btn btn-outline btn-block" onclick="toggleWishlist(event, <?= $property['id'] ?>)">

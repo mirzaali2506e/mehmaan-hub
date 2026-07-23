@@ -19,6 +19,11 @@ if ($property['owner_id'] == $user['id']) {
     redirect('/property-details.php?id=' . $propertyId);
 }
 
+if (has_user_booked_property($user['id'], $propertyId)) {
+    flash('error', 'You have already booked this property.');
+    redirect('/property-details.php?id=' . $propertyId);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $startDate = $_POST['start_date'] ?? '';
     $endDate = $_POST['end_date'] ?? '';

@@ -52,7 +52,36 @@ $user = current_user();
                 <p><?= ucfirst(e($user['role'])) ?> Account</p>
             </div>
 
-            <form method="POST" class="profile-form">
+            <!-- Read-only profile view -->
+            <div id="profileView" class="profile-view">
+                <div class="form-section">
+                    <h3>Personal Information</h3>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label"><i class="fas fa-user"></i> Full Name</span>
+                        <span class="profile-info-value"><?= e($user['name']) ?></span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label"><i class="fas fa-envelope"></i> Email</span>
+                        <span class="profile-info-value"><?= e($user['email']) ?></span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label"><i class="fas fa-phone"></i> Phone</span>
+                        <span class="profile-info-value"><?= e($user['phone'] ?: 'Not provided') ?></span>
+                    </div>
+                    <div class="profile-info-row">
+                        <span class="profile-info-label"><i class="fas fa-tag"></i> Account Type</span>
+                        <span class="profile-info-value"><?= ucfirst(e($user['role'])) ?></span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="toggleEditProfile()">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editable form (hidden by default) -->
+            <form method="POST" class="profile-form" id="profileForm" style="display:none;">
                 <div class="form-section">
                     <h3>Personal Information</h3>
                     <div class="form-group">
@@ -87,9 +116,24 @@ $user = current_user();
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+                    <button type="button" class="btn btn-outline" onclick="toggleEditProfile()">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+function toggleEditProfile() {
+    var view = document.getElementById('profileView');
+    var form = document.getElementById('profileForm');
+    if (form.style.display === 'none') {
+        view.style.display = 'none';
+        form.style.display = 'block';
+    } else {
+        view.style.display = 'block';
+        form.style.display = 'none';
+    }
+}
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>
