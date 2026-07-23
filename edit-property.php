@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('error', 'Please fill in title and price.');
     } else {
         $stmt = db()->prepare('UPDATE properties SET title=?, description=?, property_type=?, address=?, city=?, area=?, price=?, price_period=?, price_per_day=?, bedrooms=?, bathrooms=?, area_sqft=?, is_furnished=?, has_parking=?, has_wifi=?, has_ac=?, has_generator=?, status=? WHERE id=?');
-        $stmt->bind_param('sssssssdssdiiiiiiisi', $title, $description, $propertyType, $address, $city, $area, $price, $pricePeriod, $pricePerDay, $bedrooms, $bathrooms, $areaSqft, $isFurnished, $hasParking, $hasWifi, $hasAc, $hasGenerator, $status, $id);
+        $stmt->bind_param('ssssssdssdiiiiiiisi', $title, $description, $propertyType, $address, $city, $area, $price, $pricePeriod, $pricePerDay, $bedrooms, $bathrooms, $areaSqft, $isFurnished, $hasParking, $hasWifi, $hasAc, $hasGenerator, $status, $id);
 
         if ($stmt->execute()) {
             if (!empty($_FILES['images']['name'][0])) {
@@ -215,8 +215,10 @@ include __DIR__ . '/includes/header.php';
                         <label for="imageInput" class="upload-label">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Click to upload more images</span>
+                            <small>or drag and drop (JPG, PNG, WebP) — up to 10</small>
                         </label>
                     </div>
+                    <small id="imageCountLabel" class="form-hint" style="text-align:center;display:block;margin-top:8px;"></small>
                     <div class="image-preview-grid" id="imagePreviewGrid"></div>
                 </div>
 

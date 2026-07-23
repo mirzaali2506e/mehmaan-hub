@@ -131,6 +131,26 @@ include __DIR__ . '/includes/header.php';
                     <p><?= nl2br(e($property['description'])) ?></p>
                 </div>
 
+                <!-- REAL MAP SECTION -->
+                <div class="property-map-section">
+                    <h3><i class="fas fa-map-marked-alt"></i> Location & Nearby Places</h3>
+                    <p class="map-subtitle">See the exact location and what's around this property — schools, hospitals, parks, mosques and more.</p>
+                    <div id="propertyMap">
+                        <div class="map-loading"><i class="fas fa-spinner fa-spin"></i> Loading map...</div>
+                    </div>
+                    <div class="map-legend" id="mapLegend" style="display:none;">
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#dc2626;"></span> Property</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#2563eb;"></span> Schools</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#059669;"></span> Hospitals</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#16a34a;"></span> Parks</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#0ea5e9;"></span> Mosques</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#f59e0b;"></span> Markets</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#7c3aed;"></span> Restaurants</div>
+                        <div class="map-legend-item"><span class="map-legend-pin" style="background:#6b7280;"></span> Fuel / Banks</div>
+                    </div>
+                    <div class="map-nearby-list" id="mapNearbyList"></div>
+                </div>
+
                 <div class="property-reviews">
                     <h3>Reviews (<?= $reviewCount ?>)</h3>
                     <?php if ($avgRating > 0): ?>
@@ -236,4 +256,152 @@ include __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- Leaflet CSS/JS (OpenStreetMap — free, no API key required) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function() {
+    var address = <?= json_encode(($property['address'] ?? '') . ', ' . ($property['city'] ?? '')) ?>;
+    var city = <?= json_encode($property['city'] ?? '') ?>;
+    var title = <?= json_encode($property['title']) ?>;
+    var mapEl = document.getElementById('propertyMap');
+    if (!mapEl || typeof L === 'undefined') return;
+    mapEl.innerHTML = '';
+
+    var defaultCenter = [31.5204, 74.3587]; // Lahore fallback
+    var map = L.map('propertyMap').setView(defaultCenter, 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    var propIcon = L.divIcon({
+        className: 'prop-map-icon',
+        html: '<div style="background:#dc2626;width:28px;height:28px;border-radius:50% 50% 50% 0;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;"><i class="fas fa-home" style="color:#fff;font-size:11px;transform:rotate(45deg);"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28]
+    });
+    var propMarker = L.marker(defaultCenter, { icon: propIcon }).addTo(map).bindPopup('<strong>' + title + '</strong><br>' + address);
+
+    // Category configuration
+    var categories = [
+        { key: 'school',      label: 'School',      color: '#2563eb', icon: 'fa-graduation-cap', osm: ['amenity=school', 'amenity=kindergarten', 'amenity=college', 'amenity=university'] },
+        { key: 'hospital',    label: 'Hospital',    color: '#059669', icon: 'fa-hospital',       osm: ['amenity=hospital', 'amenity=clinic', 'amenity=doctors', 'amenity=pharmacy'] },
+        { key: 'park',        label: 'Park',        color: '#16a34a', icon: 'fa-tree',           osm: ['leisure=park', 'leisure=garden', 'leisure=playground'] },
+        { key: 'mosque',      label: 'Mosque',      color: '#0ea5e9', icon: 'fa-mosque',         osm: ['amenity=place_of_worship'] },
+        { key: 'market',      label: 'Market',      color: '#f59e0b', icon: 'fa-shopping-basket',osm: ['shop=supermarket', 'shop=convenience', 'shop=marketplace'] },
+        { key: 'restaurant',  label: 'Restaurant',  color: '#7c3aed', icon: 'fa-utensils',       osm: ['amenity=restaurant', 'amenity=fast_food', 'amenity=cafe'] },
+        { key: 'fuel',        label: 'Fuel / Bank', color: '#6b7280', icon: 'fa-gas-pump',       osm: ['amenity=fuel', 'amenity=atm', 'amenity=bank'] }
+    ];
+
+    function makeCatIcon(color, faIcon) {
+        return L.divIcon({
+            className: 'nearby-map-icon',
+            html: '<div style="background:' + color + ';width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><i class="fas ' + faIcon + '" style="color:#fff;font-size:9px;"></i></div>',
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
+    }
+
+    var nearbyList = document.getElementById('mapNearbyList');
+    var allCoords = [defaultCenter];
+
+    // Geocode the property address first
+    var geocodeUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+    fetch(geocodeUrl, { headers: { 'Accept-Language': 'en' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data && data.length > 0) {
+                var lat = parseFloat(data[0].lat);
+                var lon = parseFloat(data[0].lon);
+                propMarker.setLatLng([lat, lon]);
+                map.setView([lat, lon], 15);
+                loadNearby(lat, lon);
+            } else {
+                // Fallback: try city only
+                var cityUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city);
+                return fetch(cityUrl, { headers: { 'Accept-Language': 'en' } })
+                    .then(function(r2) { return r2.json(); })
+                    .then(function(data2) {
+                        if (data2 && data2.length > 0) {
+                            var lat2 = parseFloat(data2[0].lat);
+                            var lon2 = parseFloat(data2[0].lon);
+                            propMarker.setLatLng([lat2, lon2]);
+                            map.setView([lat2, lon2], 14);
+                            loadNearby(lat2, lon2);
+                        } else {
+                            loadNearby(defaultCenter[0], defaultCenter[1]);
+                        }
+                    });
+            }
+        })
+        .catch(function() {
+            loadNearby(defaultCenter[0], defaultCenter[1]);
+        });
+
+    function loadNearby(lat, lon) {
+        document.getElementById('mapLegend').style.display = 'flex';
+        var radius = 2000; // 2 km
+        var radiusMeters = 1800;
+        categories.forEach(function(cat) {
+            cat.osm.forEach(function(tag) {
+                var parts = tag.split('=');
+                var query = '[out:json][timeout:10];(' +
+                    'node["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
+' +
+                    'way["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
+' +
+                    'relation["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
+' +
+                    ');out center 15;';
+                fetch('https://overpass-api.de/api/interpreter', {
+                    method: 'POST',
+                    body: 'data=' + encodeURIComponent(query)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data || !data.elements) return;
+                    var items = data.elements.slice(0, 8);
+                    items.forEach(function(el) {
+                        var elat = el.lat || (el.center && el.center.lat);
+                        var elon = el.lon || (el.center && el.center.lon);
+                        if (!elat || !elon) return;
+                        var name = el.tags && (el.tags.name || el.tags['name:en']) ? (el.tags['name:en'] || el.tags.name) : cat.label;
+                        var dist = Math.round(haversine(lat, lon, elat, elon));
+                        var marker = L.marker([elat, elon], { icon: makeCatIcon(cat.color, cat.icon) }).addTo(map);
+                        marker.bindPopup('<strong style="color:' + cat.color + '">' + name + '</strong><br>' + cat.label + ' &middot; ' + dist + ' m away');
+                        addNearbyCard(cat, name, dist);
+                        allCoords.push([elat, elon]);
+                    });
+                    if (allCoords.length > 1) {
+                        map.fitBounds(L.latLngBounds(allCoords), { padding: [50, 50], maxZoom: 16 });
+                    }
+                })
+                .catch(function() {});
+            });
+        });
+    }
+
+    function addNearbyCard(cat, name, dist) {
+        var card = document.createElement('div');
+        card.className = 'map-nearby-card';
+        card.innerHTML =
+            '<div class="map-nearby-icon" style="background:' + cat.color + '"><i class="fas ' + cat.icon + '"></i></div>' +
+            '<div class="map-nearby-info"><strong>' + escapeHtml(name) + '</strong><span>' + cat.label + ' &middot; ' + dist + ' m away</span></div>';
+        nearbyList.appendChild(card);
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+        var R = 6371000, toRad = Math.PI / 180;
+        var dLat = (lat2 - lat1) * toRad, dLon = (lon2 - lon1) * toRad;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function escapeHtml(s) {
+        var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
+})();
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

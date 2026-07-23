@@ -80,8 +80,8 @@ include __DIR__ . '/includes/header.php';
                     } else {
                         $priceDisplay = format_price($property['price']) . '<small>/' . $periodLabel . '</small>';
                     } ?>
-                    <div class="property-card">
-                        <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="property-img">
+                    <div class="property-card" onclick="window.location.href='<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>'" style="cursor:pointer;">
+                        <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="property-img" onclick="event.stopPropagation();">
                             <?php if ($img): ?>
                                 <img src="<?= e(image_url($img)) ?>" alt="<?= e($property['title']) ?>">
                             <?php else: ?>

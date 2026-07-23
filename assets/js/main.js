@@ -51,26 +51,97 @@
     });
 })();
 
-// Image upload preview
+// Image upload preview with drag-and-drop and add-more support
 (function() {
-    const imageInput = document.getElementById('imageInput');
-    const previewGrid = document.getElementById('imagePreviewGrid');
-    if (imageInput && previewGrid) {
-        imageInput.addEventListener('change', function() {
-            previewGrid.innerHTML = '';
-            const files = Array.from(this.files);
-            files.forEach(function(file, idx) {
-                if (!file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.createElement('div');
-                    preview.className = 'image-preview';
-                    preview.innerHTML = '<img src="' + e.target.result + '">' +
-                        '<button type="button" class="remove-preview" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
-                    previewGrid.appendChild(preview);
-                };
-                reader.readAsDataURL(file);
+    var imageInput = document.getElementById('imageInput');
+    var previewGrid = document.getElementById('imagePreviewGrid');
+    var uploadArea = document.getElementById('imageUploadArea');
+    if (!imageInput || !previewGrid) return;
+
+    var selectedFiles = [];
+
+    function isImageFile(file) {
+        return file.type.startsWith('image/');
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function renderPreviews() {
+        previewGrid.innerHTML = '';
+        selectedFiles.forEach(function(file, idx) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = document.createElement('div');
+                preview.className = 'image-preview';
+                var img = document.createElement('img');
+                img.src = e.target.result;
+                var info = document.createElement('div');
+                info.className = 'image-preview-info';
+                info.textContent = file.name.length > 18 ? file.name.substr(0, 15) + '...' : file.name;
+                var removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'remove-preview';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.addEventListener('click', function(ev) {
+                    ev.stopPropagation();
+                    selectedFiles.splice(idx, 1);
+                    syncToInput();
+                    renderPreviews();
+                });
+                preview.appendChild(img);
+                preview.appendChild(info);
+                preview.appendChild(removeBtn);
+                previewGrid.appendChild(preview);
+            };
+            reader.readAsDataURL(file);
+        });
+        var counter = document.getElementById('imageCountLabel');
+        if (counter) {
+            counter.textContent = selectedFiles.length === 0 ? '' : selectedFiles.length + ' image' + (selectedFiles.length === 1 ? '' : 's') + ' selected';
+        }
+    }
+
+    function syncToInput() {
+        var dt = new DataTransfer();
+        selectedFiles.forEach(function(f) { dt.items.add(f); });
+        imageInput.files = dt.files;
+    }
+
+    imageInput.addEventListener('change', function() {
+        var newFiles = Array.from(this.files);
+        newFiles.forEach(function(f) {
+            if (isImageFile(f) && selectedFiles.length < 10) selectedFiles.push(f);
+        });
+        syncToInput();
+        renderPreviews();
+    });
+
+    if (uploadArea) {
+        ['dragenter','dragover'].forEach(function(ev) {
+            uploadArea.addEventListener(ev, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.add('drag-over');
             });
+        });
+        ['dragleave','drop'].forEach(function(ev) {
+            uploadArea.addEventListener(ev, function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                uploadArea.classList.remove('drag-over');
+            });
+        });
+        uploadArea.addEventListener('drop', function(e) {
+            var dropped = Array.from(e.dataTransfer.files);
+            dropped.forEach(function(f) {
+                if (isImageFile(f) && selectedFiles.length < 10) selectedFiles.push(f);
+            });
+            syncToInput();
+            renderPreviews();
         });
     }
 })();

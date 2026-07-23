@@ -191,9 +191,10 @@ include __DIR__ . '/includes/header.php';
                         <label for="imageInput" class="upload-label">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <span>Click to upload images</span>
-                            <small>or drag and drop (JPG, PNG, WebP)</small>
+                            <small>or drag and drop (JPG, PNG, WebP) — up to 10</small>
                         </label>
                     </div>
+                    <small id="imageCountLabel" class="form-hint" style="text-align:center;display:block;margin-top:8px;"></small>
                     <div class="image-preview-grid" id="imagePreviewGrid"></div>
                 </div>
 

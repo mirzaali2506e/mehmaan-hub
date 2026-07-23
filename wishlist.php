@@ -26,8 +26,8 @@ include __DIR__ . '/includes/header.php';
         <?php else: ?>
             <div class="property-grid">
                 <?php foreach ($wishlist as $p): ?>
-                    <div class="property-card">
-                        <a href="<?= SITE_URL ?>/property-details.php?id=<?= $p['id'] ?>" class="property-img">
+                    <div class="property-card" onclick="window.location.href='<?= SITE_URL ?>/property-details.php?id=<?= $p['id'] ?>'" style="cursor:pointer;">
+                        <a href="<?= SITE_URL ?>/property-details.php?id=<?= $p['id'] ?>" class="property-img" onclick="event.stopPropagation();">
                             <?php if (!empty($p['primary_image'])): ?>
                                 <img src="<?= e(image_url($p['primary_image'])) ?>" alt="<?= e($p['title']) ?>">
                             <?php else: ?>

@@ -1451,6 +1451,140 @@ textarea:focus-visible {
     background: var(--bg);
 }
 
+.image-upload-area.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-50);
+    border-style: solid;
+    transform: scale(1.01);
+}
+
+.image-preview-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, .7);
+    color: white;
+    font-size: .68rem;
+    padding: 3px 4px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   REAL MAP (Leaflet + Overpass)
+   ========================================================================== */
+.property-map-section {
+    margin: var(--sp-8) 0;
+}
+
+.property-map-section h3 {
+    font-size: 1.15rem;
+    margin-bottom: var(--sp-2);
+}
+
+.property-map-section .map-subtitle {
+    color: var(--text-secondary);
+    font-size: .9rem;
+    margin-bottom: var(--sp-4);
+}
+
+#propertyMap {
+    height: 420px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    z-index: 1;
+}
+
+.map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+    margin-top: var(--sp-4);
+    padding: var(--sp-4);
+    background: var(--bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .83rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.map-legend-pin {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.map-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    gap: 8px;
+    font-size: .9rem;
+}
+
+.map-nearby-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--sp-3);
+    margin-top: var(--sp-4);
+}
+
+.map-nearby-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    transition: var(--transition);
+}
+
+.map-nearby-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+}
+
+.map-nearby-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.map-nearby-info strong {
+    display: block;
+    font-size: .88rem;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+
+.map-nearby-info span {
+    font-size: .78rem;
+    color: var(--text-tertiary);
+}
+
+@media (max-width: 600px) {
+    #propertyMap { height: 300px; }
+}
+
 .image-upload-area:hover {
     border-color: var(--primary);
     background: var(--primary-50);
