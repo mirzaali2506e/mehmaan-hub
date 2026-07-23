@@ -980,7 +980,7 @@ textarea:focus-visible {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     margin-bottom: var(--sp-8);
-    position: sticky;
+    /* position: sticky; */
     top: calc(var(--nav-height) + 12px);
     z-index: 100;
 }
@@ -2927,6 +2927,7 @@ textarea:focus-visible {
         transform: translateY(0);
         opacity: 1;
         pointer-events: auto;
+        height: fit-content;
     }
     .nav-links > a:not(.btn) {
         padding: var(--sp-3) 0;
