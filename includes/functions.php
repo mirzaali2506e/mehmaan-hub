@@ -106,7 +106,7 @@ function get_primary_image($propertyId) {
 }
 
 function get_all_properties($limit = null, $search = '', $type = '', $city = '', $minPrice = null, $maxPrice = null) {
-    $sql = "SELECT p.*, u.name as owner_name FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.status = 'available'";
+    $sql = "SELECT p.*, u.name as owner_name FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.status IN ('available', 'rented')";
     $params = [];
     $types = '';
     if ($search) {

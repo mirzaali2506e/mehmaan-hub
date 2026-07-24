@@ -3,7 +3,7 @@ require_once __DIR__ . '/includes/functions.php';
 $user = current_user();
 
 $cities = [];
-$res = db()->query("SELECT DISTINCT city FROM properties WHERE city != '' AND status = 'available' ORDER BY city");
+$res = db()->query("SELECT DISTINCT city FROM properties WHERE city != '' AND status IN ('available', 'rented') ORDER BY city");
 while ($row = $res->fetch_assoc()) {
     $cities[] = $row['city'];
 }

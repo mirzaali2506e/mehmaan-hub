@@ -14,7 +14,7 @@ $maxPrice = $_GET['max_price'] ?? null;
 if ($minPrice !== '' && $minPrice !== null) $minPrice = (float)$minPrice; else $minPrice = null;
 if ($maxPrice !== '' && $maxPrice !== null) $maxPrice = (float)$maxPrice; else $maxPrice = null;
 
-$sql = "SELECT p.*, u.name as owner_name FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.status = 'available'";
+$sql = "SELECT p.*, u.name as owner_name FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.status IN ('available', 'rented')";
 $params = [];
 $types = '';
 if ($search) {
@@ -81,6 +81,8 @@ foreach ($properties as $property) {
             <?php endif; ?>
             <?php if ($isBooked): ?>
                 <span class="badge badge-booked">Booked by You</span>
+            <?php elseif ($property['status'] === 'rented'): ?>
+                <span class="badge badge-booked">Currently Rented</span>
             <?php endif; ?>
             <span class="badge badge-type"><?= get_property_type_label($property['property_type']) ?></span>
         </a>
@@ -98,6 +100,8 @@ foreach ($properties as $property) {
                 <span class="property-price<?= $priceClass ?>"><?= $priceDisplay ?></span>
                 <?php if ($isBooked): ?>
                     <span class="badge badge-booked badge-booked-sm">Booked</span>
+                <?php elseif ($property['status'] === 'rented'): ?>
+                    <span class="badge badge-booked badge-booked-sm">Rented</span>
                 <?php else: ?>
                     <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
                 <?php endif; ?>
@@ -107,7 +111,7 @@ foreach ($properties as $property) {
     <?php $html .= ob_get_clean();
 }
 
-$countSql = "SELECT COUNT(*) as c FROM properties p WHERE p.status = 'available'";
+$countSql = "SELECT COUNT(*) as c FROM properties p WHERE p.status IN ('available', 'rented')";
 $countParams = [];
 $countTypes = '';
 if ($search) {

@@ -8,7 +8,7 @@ if ($user && $user['role'] === 'tenant') {
     $bookedSet = array_flip(get_user_booked_property_ids($user['id']));
 }
 $cities = [];
-$res = db()->query("SELECT DISTINCT city FROM properties WHERE city != '' AND status = 'available' ORDER BY city");
+$res = db()->query("SELECT DISTINCT city FROM properties WHERE city != '' AND status IN ('available', 'rented') ORDER BY city");
 while ($row = $res->fetch_assoc()) {
     $cities[] = $row['city'];
 }
@@ -92,6 +92,8 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                             <?php if (isset($bookedSet[$property['id']])): ?>
                                 <span class="badge badge-booked">Booked by You</span>
+                            <?php elseif ($property['status'] === 'rented'): ?>
+                                <span class="badge badge-booked">Currently Rented</span>
                             <?php endif; ?>
                             <span class="badge badge-type"><?= get_property_type_label($property['property_type']) ?></span>
                         </a>
@@ -109,6 +111,8 @@ include __DIR__ . '/includes/header.php';
                                 <span class="property-price<?= $priceClass ?>"><?= $priceDisplay ?></span>
                                 <?php if (isset($bookedSet[$property['id']])): ?>
                                     <span class="badge badge-booked badge-booked-sm">Booked</span>
+                                <?php elseif ($property['status'] === 'rented'): ?>
+                                    <span class="badge badge-booked badge-booked-sm">Rented</span>
                                 <?php else: ?>
                                     <a href="<?= SITE_URL ?>/property-details.php?id=<?= $property['id'] ?>" class="btn btn-outline btn-sm">View</a>
                                 <?php endif; ?>

@@ -126,11 +126,6 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <?php endif; ?>
 
-                <div class="property-description">
-                    <h3>Description</h3>
-                    <p><?= nl2br(e($property['description'])) ?></p>
-                </div>
-
                 <!-- REAL MAP SECTION -->
                 <div class="property-map-section">
                     <h3><i class="fas fa-map-marked-alt"></i> Location & Nearby Places</h3>
@@ -149,6 +144,11 @@ include __DIR__ . '/includes/header.php';
                         <div class="map-legend-item"><span class="map-legend-pin" style="background:#6b7280;"></span> Fuel / Banks</div>
                     </div>
                     <div class="map-nearby-list" id="mapNearbyList"></div>
+                </div>
+
+                <div class="property-description">
+                    <h3>Description</h3>
+                    <p><?= nl2br(e($property['description'])) ?></p>
                 </div>
 
                 <div class="property-reviews">

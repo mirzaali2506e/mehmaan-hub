@@ -2394,7 +2394,7 @@ textarea:focus-visible {
 
 .property-description p {
     color: var(--text-secondary);
-    line-height: 1.85;
+    line-height: 1.6;
     white-space: pre-line;
 }
 
