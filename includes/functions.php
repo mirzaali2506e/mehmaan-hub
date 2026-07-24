@@ -18,6 +18,9 @@ function send_no_cache_headers() {
 function current_user() {
     start_session_safe();
     if (!isset($_SESSION['user_id'])) {
+        if (try_remember_login()) {
+            return current_user();
+        }
         return null;
     }
     static $cachedUser = null;
@@ -155,14 +158,14 @@ function get_user_properties($ownerId) {
 }
 
 function get_user_bookings($userId) {
-    $stmt = db()->prepare('SELECT b.*, p.title as property_title, (SELECT image_path FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) as primary_image FROM bookings b JOIN properties p ON b.property_id = p.id WHERE b.tenant_id = ? ORDER BY b.created_at DESC');
+    $stmt = db()->prepare('SELECT b.*, p.title as property_title, p.owner_id, u.name as owner_name, u.phone as owner_phone, u.email as owner_email, (SELECT image_path FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) as primary_image FROM bookings b JOIN properties p ON b.property_id = p.id JOIN users u ON p.owner_id = u.id WHERE b.tenant_id = ? ORDER BY b.created_at DESC');
     $stmt->bind_param('i', $userId);
     $stmt->execute();
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
 function get_owner_bookings($ownerId) {
-    $stmt = db()->prepare('SELECT b.*, p.title as property_title, u.name as tenant_name, u.phone as tenant_phone, (SELECT image_path FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) as primary_image FROM bookings b JOIN properties p ON b.property_id = p.id JOIN users u ON b.tenant_id = u.id WHERE p.owner_id = ? ORDER BY b.created_at DESC');
+    $stmt = db()->prepare('SELECT b.*, p.title as property_title, u.name as tenant_name, u.email as tenant_email, u.phone as tenant_phone, (SELECT image_path FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, sort_order ASC LIMIT 1) as primary_image FROM bookings b JOIN properties p ON b.property_id = p.id JOIN users u ON b.tenant_id = u.id WHERE p.owner_id = ? ORDER BY b.created_at DESC');
     $stmt->bind_param('i', $ownerId);
     $stmt->execute();
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -263,7 +266,88 @@ function create_password_reset($userId) {
     return $otp;
 }
 
+function try_remember_login() {
+    if (empty($_COOKIE['remember_me'])) {
+        return false;
+    }
+    $parts = explode(':', $_COOKIE['remember_me'], 2);
+    if (count($parts) !== 2 || !ctype_digit($parts[0])) {
+        return false;
+    }
+    $userId = (int)$parts[0];
+    $token = $parts[1];
+    $tokenHash = hash('sha256', $token);
+
+    $stmt = db()->prepare('SELECT rt.id, rt.user_id, rt.expires_at, u.name, u.role FROM remember_tokens rt JOIN users u ON rt.user_id = u.id WHERE rt.user_id = ? AND rt.token_hash = ? LIMIT 1');
+    $stmt->bind_param('is', $userId, $tokenHash);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+
+    if (!$row) {
+        return false;
+    }
+    if (strtotime($row['expires_at']) < time()) {
+        $del = db()->prepare('DELETE FROM remember_tokens WHERE id = ?');
+        $del->bind_param('i', $row['id']);
+        $del->execute();
+        return false;
+    }
+
+    session_regenerate_id(true);
+    $_SESSION['user_id'] = $row['user_id'];
+    $_SESSION['user_name'] = $row['name'];
+    $_SESSION['user_role'] = $row['role'];
+    $_SESSION['login_time'] = time();
+    return true;
+}
+
+function clear_remember_tokens($userId) {
+    $stmt = db()->prepare('DELETE FROM remember_tokens WHERE user_id = ?');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+}
+
+function create_notification($userId, $type, $title, $message, $link = null) {
+    $stmt = db()->prepare('INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)');
+    $stmt->bind_param('issss', $userId, $type, $title, $message, $link);
+    $stmt->execute();
+    return db()->insert_id;
+}
+
+function get_unread_notifications($userId) {
+    $stmt = db()->prepare('SELECT * FROM notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function get_unread_notification_count($userId) {
+    $stmt = db()->prepare('SELECT COUNT(*) as cnt FROM notifications WHERE user_id = ? AND is_read = 0');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    return (int)$row['cnt'];
+}
+
+function mark_notifications_read($userId) {
+    $stmt = db()->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+}
+
+function time_ago($datetime) {
+    $time = strtotime($datetime);
+    $diff = time() - $time;
+    if ($diff < 60) return 'just now';
+    if ($diff < 3600) return floor($diff / 60) . 'm ago';
+    if ($diff < 86400) return floor($diff / 3600) . 'h ago';
+    if ($diff < 604800) return floor($diff / 86400) . 'd ago';
+    return date('M d', $time);
+}
+
 function verify_password_reset_otp($userId, $otp) {
+
+    if ($otp === null) return false;
     $stmt = db()->prepare('SELECT id, otp_hash, expires_at, used FROM password_resets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
     $stmt->bind_param('i', $userId);
     $stmt->execute();

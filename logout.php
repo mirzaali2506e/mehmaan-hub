@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
 start_session_safe();
+if (!empty($_SESSION['user_id'])) {
+    clear_remember_tokens($_SESSION['user_id']);
+}
+setcookie('remember_me', '', time() - 42000, '/', '', false, true);
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {
     $params = session_get_cookie_params();

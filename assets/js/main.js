@@ -146,6 +146,27 @@
     }
 })();
 
+// Notification bell toggle + mark read
+function toggleNotifPanel(e) {
+    e.stopPropagation();
+    var panel = document.getElementById('notifPanel');
+    if (panel) panel.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+    var wrap = document.getElementById('navNotification');
+    var panel = document.getElementById('notifPanel');
+    if (panel && wrap && !wrap.contains(e.target)) panel.classList.remove('open');
+});
+
+function markNotifsRead() {
+    fetch(SITE_URL + '/api/mark-notifications-read.php', { method: 'POST', credentials: 'same-origin' })
+        .then(function() {
+            var badge = document.querySelector('.notif-badge');
+            if (badge) badge.style.display = 'none';
+        });
+}
+
 // Wishlist toggle
 function toggleWishlist(e, propertyId) {
     e.preventDefault();

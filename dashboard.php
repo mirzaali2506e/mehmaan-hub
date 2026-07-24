@@ -105,6 +105,17 @@ include __DIR__ . '/includes/header.php';
                                 <td data-label="Actions">
                                     <?php if ($b['status'] === 'pending'): ?>
                                         <a href="<?= SITE_URL ?>/api/booking-action.php?id=<?= $b['id'] ?>&action=cancel" class="btn btn-danger btn-sm">Cancel</a>
+                                    <?php elseif ($b['status'] === 'confirmed'): ?>
+                                        <?php
+                                        $waPhone = preg_replace('/[^0-9]/', '', $b['owner_phone'] ?? '');
+                                        if (!str_starts_with($waPhone, '92') && str_starts_with($waPhone, '0')) {
+                                            $waPhone = '92' . substr($waPhone, 1);
+                                        }
+                                        $waMsg = rawurlencode("Hello " . ($b['owner_name'] ?? 'Owner') . ", this is regarding my confirmed booking for '" . $b['property_title'] . "' (" . date('M d', strtotime($b['start_date'])) . " - " . date('M d, Y', strtotime($b['end_date'])) . ") on Mehmaan Hub.");
+                                        ?>
+                                        <?php if ($waPhone): ?>
+                                        <a href="https://wa.me/<?= $waPhone ?>?text=<?= $waMsg ?>" target="_blank" class="btn btn-outline btn-sm" style="color:#25D366;border-color:#25D366;" title="Message owner on WhatsApp"><i class="fab fa-whatsapp"></i> Contact Owner</a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                             </tr>

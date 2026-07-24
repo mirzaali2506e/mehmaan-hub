@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/mail.php';
 $user = current_user();
 if (!$user) {
     flash('error', 'Please log in to book a property.');
@@ -71,6 +72,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('iissds', $propertyId, $user['id'], $startDate, $endDate, $totalAmount, $notes);
 
             if ($stmt->execute()) {
+                $bookingId = $stmt->insert_id;
+
+                $ownerStmt = db()->prepare('SELECT u.id, u.name, u.email, u.phone FROM properties p JOIN users u ON p.owner_id = u.id WHERE p.id = ?');
+                $ownerStmt->bind_param('i', $propertyId);
+                $ownerStmt->execute();
+                $owner = $ownerStmt->get_result()->fetch_assoc();
+
+                if ($owner) {
+                    $notifTitle = 'New Booking Request';
+                    $notifMsg = $user['name'] . ' requested to book "' . $property['title'] . '" from ' . date('M d, Y', strtotime($startDate)) . ' to ' . date('M d, Y', strtotime($endDate)) . '.';
+                    create_notification($owner['id'], 'booking_request', $notifTitle, $notifMsg, '/owner-dashboard.php');
+
+                    $emailBody = '<p>You have received a new booking request on <strong>' . SITE_NAME . '</strong>.</p>' .
+                        '<p><strong>Tenant:</strong> ' . e($user['name']) . '<br>' .
+                        '<strong>Property:</strong> ' . e($property['title']) . '<br>' .
+                        '<strong>Dates:</strong> ' . date('M d, Y', strtotime($startDate)) . ' to ' . date('M d, Y', strtotime($endDate)) . '<br>' .
+                        '<strong>Total:</strong> Rs ' . number_format($totalAmount) . '</p>' .
+                        '<p>Please log in to your dashboard to confirm or cancel this request.</p>' .
+                        '<p><a href="' . SITE_URL . '/owner-dashboard.php" style="display:inline-block;background:#2563eb;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;">View Booking</a></p>';
+                    send_notification_email($owner['email'], $owner['name'], 'New Booking Request - ' . SITE_NAME, $emailBody);
+                }
+
                 flash('success', 'Booking request sent! The owner will confirm shortly.');
                 redirect('/dashboard.php');
             } else {

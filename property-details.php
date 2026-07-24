@@ -269,10 +269,10 @@ include __DIR__ . '/includes/header.php';
     if (!mapEl || typeof L === 'undefined') return;
     mapEl.innerHTML = '';
 
-    var defaultCenter = [31.5204, 74.3587]; // Lahore fallback
+    var defaultCenter = [31.5204, 74.3587];
     var map = L.map('propertyMap').setView(defaultCenter, 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
         maxZoom: 19
     }).addTo(map);
 
@@ -284,16 +284,15 @@ include __DIR__ . '/includes/header.php';
     });
     var propMarker = L.marker(defaultCenter, { icon: propIcon }).addTo(map).bindPopup('<strong>' + title + '</strong><br>' + address);
 
-    // Category configuration
-    var categories = [
-        { key: 'school',      label: 'School',      color: '#2563eb', icon: 'fa-graduation-cap', osm: ['amenity=school', 'amenity=kindergarten', 'amenity=college', 'amenity=university'] },
-        { key: 'hospital',    label: 'Hospital',    color: '#059669', icon: 'fa-hospital',       osm: ['amenity=hospital', 'amenity=clinic', 'amenity=doctors', 'amenity=pharmacy'] },
-        { key: 'park',        label: 'Park',        color: '#16a34a', icon: 'fa-tree',           osm: ['leisure=park', 'leisure=garden', 'leisure=playground'] },
-        { key: 'mosque',      label: 'Mosque',      color: '#0ea5e9', icon: 'fa-mosque',         osm: ['amenity=place_of_worship'] },
-        { key: 'market',      label: 'Market',      color: '#f59e0b', icon: 'fa-shopping-basket',osm: ['shop=supermarket', 'shop=convenience', 'shop=marketplace'] },
-        { key: 'restaurant',  label: 'Restaurant',  color: '#7c3aed', icon: 'fa-utensils',       osm: ['amenity=restaurant', 'amenity=fast_food', 'amenity=cafe'] },
-        { key: 'fuel',        label: 'Fuel / Bank', color: '#6b7280', icon: 'fa-gas-pump',       osm: ['amenity=fuel', 'amenity=atm', 'amenity=bank'] }
-    ];
+    var categories = {
+        school:     { label: 'School',      color: '#2563eb', icon: 'fa-graduation-cap' },
+        hospital:   { label: 'Hospital',    color: '#059669', icon: 'fa-hospital' },
+        park:       { label: 'Park',        color: '#16a34a', icon: 'fa-tree' },
+        mosque:     { label: 'Mosque',      color: '#0ea5e9', icon: 'fa-mosque' },
+        market:     { label: 'Market',      color: '#f59e0b', icon: 'fa-shopping-basket' },
+        restaurant: { label: 'Restaurant',  color: '#7c3aed', icon: 'fa-utensils' },
+        fuel:       { label: 'Fuel/Bank',   color: '#6b7280', icon: 'fa-gas-pump' }
+    };
 
     function makeCatIcon(color, faIcon) {
         return L.divIcon({
@@ -307,7 +306,91 @@ include __DIR__ . '/includes/header.php';
     var nearbyList = document.getElementById('mapNearbyList');
     var allCoords = [defaultCenter];
 
-    // Geocode the property address first
+    var R = 6371000, toRad = Math.PI / 180;
+    function haversine(lat1, lon1, lat2, lon2) {
+        var dLat = (lat2 - lat1) * toRad, dLon = (lon2 - lon1) * toRad;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+    function escapeHtml(s) {
+        var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
+
+    function addNearbyCard(catKey, name, dist) {
+        var cat = categories[catKey];
+        if (!cat) return;
+        var card = document.createElement('div');
+        card.className = 'map-nearby-card';
+        card.innerHTML =
+            '<div class="map-nearby-icon" style="background:' + cat.color + '"><i class="fas ' + cat.icon + '"></i></div>' +
+            '<div class="map-nearby-info"><strong>' + escapeHtml(name) + '</strong><span>' + cat.label + ' &middot; ' + dist + ' m away</span></div>';
+        nearbyList.appendChild(card);
+    }
+
+    function classifyElement(el) {
+        var tags = el.tags || {};
+        if (tags.amenity === 'school' || tags.amenity === 'kindergarten' || tags.amenity === 'college' || tags.amenity === 'university') return 'school';
+        if (tags.amenity === 'hospital' || tags.amenity === 'clinic' || tags.amenity === 'doctors' || tags.amenity === 'pharmacy') return 'hospital';
+        if (tags.leisure === 'park' || tags.leisure === 'garden' || tags.leisure === 'playground') return 'park';
+        if (tags.amenity === 'place_of_worship') return 'mosque';
+        if (tags.shop === 'supermarket' || tags.shop === 'convenience' || tags.shop === 'marketplace') return 'market';
+        if (tags.amenity === 'restaurant' || tags.amenity === 'fast_food' || tags.amenity === 'cafe') return 'restaurant';
+        if (tags.amenity === 'fuel' || tags.amenity === 'atm' || tags.amenity === 'bank') return 'fuel';
+        return null;
+    }
+
+    function loadNearby(lat, lon) {
+        document.getElementById('mapLegend').style.display = 'flex';
+        var rad = 1800;
+        var query = '[out:json][timeout:15];(' +
+            'node["amenity"~"^(school|kindergarten|college|university|hospital|clinic|doctors|pharmacy|place_of_worship|restaurant|fast_food|cafe|fuel|atm|bank)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            'way["amenity"~"^(school|kindergarten|college|university|hospital|clinic|doctors|pharmacy|place_of_worship|restaurant|fast_food|cafe|fuel|atm|bank)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            'node["leisure"~"^(park|garden|playground)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            'way["leisure"~"^(park|garden|playground)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            'node["shop"~"^(supermarket|convenience|marketplace)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            'way["shop"~"^(supermarket|convenience|marketplace)$"](around:' + rad + ',' + lat + ',' + lon + ');' +
+            ');out center 40;';
+
+        fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(query)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data || !data.elements) return;
+            var seen = {};
+            var perCat = {};
+            data.elements.forEach(function(el) {
+                var elat = el.lat || (el.center && el.center.lat);
+                var elon = el.lon || (el.center && el.center.lon);
+                if (!elat || !elon) return;
+                var catKey = classifyElement(el);
+                if (!catKey) return;
+                perCat[catKey] = (perCat[catKey] || 0) + 1;
+                if (perCat[catKey] > 5) return;
+                var name = (el.tags && (el.tags['name:en'] || el.tags.name)) ? (el.tags['name:en'] || el.tags.name) : categories[catKey].label;
+                var dist = Math.round(haversine(lat, lon, elat, elon));
+                var idKey = catKey + ':' + elat + ':' + elon;
+                if (seen[idKey]) return;
+                seen[idKey] = true;
+                var cat = categories[catKey];
+                var marker = L.marker([elat, elon], { icon: makeCatIcon(cat.color, cat.icon) }).addTo(map);
+                marker.bindPopup('<strong style="color:' + cat.color + '">' + escapeHtml(name) + '</strong><br>' + cat.label + ' &middot; ' + dist + ' m away');
+                addNearbyCard(catKey, name, dist);
+                allCoords.push([elat, elon]);
+            });
+            if (allCoords.length > 1) {
+                map.fitBounds(L.latLngBounds(allCoords), { padding: [50, 50], maxZoom: 16 });
+            }
+        })
+        .catch(function() {
+            var errDiv = document.createElement('p');
+            errDiv.style.cssText = 'color:#999;font-size:.85rem;text-align:center;margin-top:12px;';
+            errDiv.textContent = 'Could not load nearby places. The map location is still visible above.';
+            nearbyList.appendChild(errDiv);
+        });
+    }
+
     var geocodeUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
     fetch(geocodeUrl, { headers: { 'Accept-Language': 'en' } })
         .then(function(r) { return r.json(); })
@@ -319,7 +402,6 @@ include __DIR__ . '/includes/header.php';
                 map.setView([lat, lon], 15);
                 loadNearby(lat, lon);
             } else {
-                // Fallback: try city only
                 var cityUrl = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(city);
                 return fetch(cityUrl, { headers: { 'Accept-Language': 'en' } })
                     .then(function(r2) { return r2.json(); })
@@ -339,69 +421,6 @@ include __DIR__ . '/includes/header.php';
         .catch(function() {
             loadNearby(defaultCenter[0], defaultCenter[1]);
         });
-
-    function loadNearby(lat, lon) {
-        document.getElementById('mapLegend').style.display = 'flex';
-        var radius = 2000; // 2 km
-        var radiusMeters = 1800;
-        categories.forEach(function(cat) {
-            cat.osm.forEach(function(tag) {
-                var parts = tag.split('=');
-                var query = '[out:json][timeout:10];(' +
-                    'node["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
-' +
-                    'way["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
-' +
-                    'relation["' + parts[0] + '"="' + parts[1] + '"](around:' + radiusMeters + ',' + lat + ',' + lon + ');
-' +
-                    ');out center 15;';
-                fetch('https://overpass-api.de/api/interpreter', {
-                    method: 'POST',
-                    body: 'data=' + encodeURIComponent(query)
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (!data || !data.elements) return;
-                    var items = data.elements.slice(0, 8);
-                    items.forEach(function(el) {
-                        var elat = el.lat || (el.center && el.center.lat);
-                        var elon = el.lon || (el.center && el.center.lon);
-                        if (!elat || !elon) return;
-                        var name = el.tags && (el.tags.name || el.tags['name:en']) ? (el.tags['name:en'] || el.tags.name) : cat.label;
-                        var dist = Math.round(haversine(lat, lon, elat, elon));
-                        var marker = L.marker([elat, elon], { icon: makeCatIcon(cat.color, cat.icon) }).addTo(map);
-                        marker.bindPopup('<strong style="color:' + cat.color + '">' + name + '</strong><br>' + cat.label + ' &middot; ' + dist + ' m away');
-                        addNearbyCard(cat, name, dist);
-                        allCoords.push([elat, elon]);
-                    });
-                    if (allCoords.length > 1) {
-                        map.fitBounds(L.latLngBounds(allCoords), { padding: [50, 50], maxZoom: 16 });
-                    }
-                })
-                .catch(function() {});
-            });
-        });
-    }
-
-    function addNearbyCard(cat, name, dist) {
-        var card = document.createElement('div');
-        card.className = 'map-nearby-card';
-        card.innerHTML =
-            '<div class="map-nearby-icon" style="background:' + cat.color + '"><i class="fas ' + cat.icon + '"></i></div>' +
-            '<div class="map-nearby-info"><strong>' + escapeHtml(name) + '</strong><span>' + cat.label + ' &middot; ' + dist + ' m away</span></div>';
-        nearbyList.appendChild(card);
-    }
-
-    function haversine(lat1, lon1, lat2, lon2) {
-        var R = 6371000, toRad = Math.PI / 180;
-        var dLat = (lat2 - lat1) * toRad, dLon = (lon2 - lon1) * toRad;
-        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)*Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    function escapeHtml(s) {
-        var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
-    }
 })();
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

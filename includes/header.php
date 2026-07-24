@@ -40,6 +40,33 @@ $hideNav = in_array($currentPage, $authPages);
                     <a href="<?= SITE_URL ?>/dashboard.php" class="<?= $currentPage === 'dashboard' ? 'active' : '' ?>">My Dashboard</a>
                 <?php endif; ?>
                 <a href="<?= SITE_URL ?>/wishlist.php" class="<?= $currentPage === 'wishlist' ? 'active' : '' ?>"><i class="fas fa-heart"></i></a>
+                <?php
+                $notifCount = get_unread_notification_count($user['id']);
+                $unreadNotifs = $notifCount > 0 ? get_unread_notifications($user['id']) : [];
+                ?>
+                <div class="nav-notification<?= $notifCount > 0 ? ' has-notif' : '' ?>" id="navNotification">
+                    <button class="nav-notification-btn" onclick="toggleNotifPanel(event)" aria-label="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <?php if ($notifCount > 0): ?><span class="notif-badge"><?= $notifCount ?></span><?php endif; ?>
+                    </button>
+                    <div class="notif-panel" id="notifPanel">
+                        <?php if (empty($unreadNotifs)): ?>
+                            <div class="notif-empty"><i class="fas fa-bell-slash"></i><p>No new notifications</p></div>
+                        <?php else: ?>
+                            <div class="notif-header">Notifications (<?= $notifCount ?>)</div>
+                            <?php foreach ($unreadNotifs as $n): ?>
+                                <a href="<?= SITE_URL ?><?= e($n['link'] ?? '/dashboard.php') ?>" class="notif-item" onclick="markNotifsRead()">
+                                    <div class="notif-icon"><i class="fas fa-bell"></i></div>
+                                    <div>
+                                        <strong><?= e($n['title']) ?></strong>
+                                        <p><?= e($n['message']) ?></p>
+                                        <small><?= time_ago($n['created_at']) ?></small>
+                                    </div>
+                                </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
                 <div class="nav-user">
                     <a href="<?= SITE_URL ?>/profile.php" class="nav-user-link">
                         <div class="nav-avatar"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>

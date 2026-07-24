@@ -10,6 +10,9 @@ A rental property listing platform built with HTML, CSS, JavaScript, PHP, and My
 3. Choose the file `database/mehmaan_hub.sql`
 4. Click "Go" to import
 5. Also import `database/add_password_resets.sql` to enable the forgot password (OTP) feature
+6. Also import `database/add_price_period.sql` for per-day pricing support
+7. Also import `database/add_remember_tokens.sql` to enable persistent login (stay logged in)
+8. Also import `database/add_notifications.sql` to enable in-app booking notifications
 
 The database comes pre-loaded with:
 - 3 property owners with properties

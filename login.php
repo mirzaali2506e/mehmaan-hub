@@ -21,9 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $user = $result->fetch_assoc();
             if (password_verify($password, $user['password'])) {
+                session_regenerate_id(true);
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['name'];
                 $_SESSION['user_role'] = $user['role'];
+                $_SESSION['login_time'] = time();
+
+                $remember = isset($_POST['remember']);
+                if ($remember) {
+                    $token = bin2hex(random_bytes(32));
+                    $tokenHash = hash('sha256', $token);
+                    $expires = date('Y-m-d H:i:s', time() + 30 * 86400);
+                    $stmt = db()->prepare('INSERT INTO remember_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)');
+                    $stmt->bind_param('iss', $user['id'], $tokenHash, $expires);
+                    $stmt->execute();
+                    setcookie('remember_me', $user['id'] . ':' . $token, [
+                        'expires' => time() + 30 * 86400,
+                        'path' => '/',
+                        'httponly' => true,
+                        'samesite' => 'Lax',
+                    ]);
+                }
                 if ($user['role'] === 'owner' || $user['role'] === 'admin') {
                     redirect('/owner-dashboard.php');
                 } else {
@@ -66,6 +84,9 @@ include __DIR__ . '/includes/header.php';
                     </div>
                 </div>
                 <div class="auth-form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember" value="1"> Keep me logged in
+                    </label>
                     <a href="<?= SITE_URL ?>/forgot-password.php" class="auth-forgot-link">Forgot password?</a>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Sign In</button>
